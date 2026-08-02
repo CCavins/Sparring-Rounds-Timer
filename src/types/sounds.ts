@@ -31,8 +31,8 @@ export const SOUND_PACKS: SoundPack[] = [
   },
   {
     id: 'whistle',
-    label: 'Train Horn',
-    description: 'Big locomotive horn cues.',
+    label: 'Referee Whistle',
+    description: 'Classic plastic referee whistle.',
     category: 'serious',
   },
   {
