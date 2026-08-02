@@ -1,0 +1,79 @@
+@import '@fontsource/archivo-black/400.css';
+@import '@fontsource/barlow-condensed/600.css';
+@import '@fontsource/barlow-condensed/700.css';
+@import '@fontsource/jetbrains-mono/700.css';
+
+:root {
+  color-scheme: dark;
+  --bg: #0a0a0b;
+  --text: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --text-dim: #71717a;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --accent: #ff8c28;
+  --accent-warm: #ff5c2d;
+  --phase-prep: #ffc43c;
+  --phase-active: #ff4d2e;
+  --phase-rest: #2ec8e6;
+  --phase-paused: #9a9aa3;
+  --phase-complete: #f0c14b;
+  --font-display: 'Archivo Black', 'Arial Narrow', sans-serif;
+  --font-ui: 'Barlow Condensed', 'Trebuchet MS', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  font-family: var(--font-ui);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg);
+  color: var(--text);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: rgba(255, 92, 45, 0.35);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
