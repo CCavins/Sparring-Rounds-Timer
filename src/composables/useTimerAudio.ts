@@ -16,7 +16,7 @@ interface AudioSettings {
 
 /**
  * Gym-ready synthesized audio via Web Audio API.
- * Unlocks from a user gesture (Start Timer / Test Sound).
+ * Harsh fight-timer buzzers — unlocked from Start Timer / Test Sound.
  */
 export function useTimerAudio() {
   const unlocked = ref(false)
@@ -62,7 +62,6 @@ export function useTimerAudio() {
       if (audio.state === 'suspended') {
         await audio.resume()
       }
-      // Silent buffer primes playback pipeline
       const buffer = audio.createBuffer(1, 1, audio.sampleRate)
       const source = audio.createBufferSource()
       source.buffer = buffer
@@ -98,55 +97,94 @@ export function useTimerAudio() {
     }
   }
 
-  function tone(
+  /**
+   * Harsh dual-oscillator gym buzzer.
+   * Square + slight detune saw = classic fight-timer rasp.
+   */
+  function buzz(
     frequency: number,
     startOffset: number,
     duration: number,
-    type: OscillatorType = 'sine',
-    gainValue = 0.55,
+    gainValue = 0.7,
   ): void {
     if (!ctx || !masterGain || !settings.soundEnabled) return
     const t0 = ctx.currentTime + startOffset
-    const osc = ctx.createOscillator()
+    const t1 = t0 + duration
+
+    const filter = ctx.createBiquadFilter()
+    filter.type = 'bandpass'
+    filter.frequency.setValueAtTime(frequency * 1.4, t0)
+    filter.Q.setValueAtTime(1.1, t0)
+
     const gain = ctx.createGain()
-    osc.type = type
-    osc.frequency.setValueAtTime(frequency, t0)
     gain.gain.setValueAtTime(0.0001, t0)
-    gain.gain.exponentialRampToValueAtTime(gainValue, t0 + 0.01)
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration)
-    osc.connect(gain)
+    gain.gain.exponentialRampToValueAtTime(gainValue, t0 + 0.008)
+    gain.gain.setValueAtTime(gainValue, t1 - 0.04)
+    gain.gain.exponentialRampToValueAtTime(0.0001, t1)
+
+    filter.connect(gain)
     gain.connect(masterGain)
-    osc.start(t0)
-    osc.stop(t0 + duration + 0.02)
+
+    const square = ctx.createOscillator()
+    square.type = 'square'
+    square.frequency.setValueAtTime(frequency, t0)
+    square.connect(filter)
+
+    const saw = ctx.createOscillator()
+    saw.type = 'sawtooth'
+    saw.frequency.setValueAtTime(frequency * 1.01, t0)
+    const sawGain = ctx.createGain()
+    sawGain.gain.value = 0.45
+    saw.connect(sawGain)
+    sawGain.connect(filter)
+
+    square.start(t0)
+    saw.start(t0)
+    square.stop(t1 + 0.02)
+    saw.stop(t1 + 0.02)
   }
 
-  function playBell(kind: 'start' | 'end' | 'complete'): void {
+  function playBuzzer(kind: 'start' | 'end' | 'complete' | 'warning' | 'prep'): void {
     if (!ctx || !masterGain || !settings.soundEnabled) return
 
+    if (kind === 'prep') {
+      // Short countdown chirp-buzz
+      buzz(920, 0, 0.1, 0.55)
+      vibrate(30)
+      return
+    }
+
+    if (kind === 'warning') {
+      // Two sharp warning buzzes
+      buzz(680, 0, 0.14, 0.65)
+      buzz(680, 0.22, 0.14, 0.65)
+      vibrate([40, 30, 40])
+      return
+    }
+
     if (kind === 'start') {
-      // Bright ascending bell
-      tone(660, 0, 0.35, 'triangle', 0.7)
-      tone(880, 0.08, 0.4, 'triangle', 0.55)
-      tone(1320, 0.16, 0.5, 'sine', 0.35)
-      vibrate(80)
+      // Single strong go-buzzer — short and piercing
+      buzz(440, 0, 0.55, 0.85)
+      buzz(880, 0, 0.55, 0.35)
+      vibrate(100)
       return
     }
 
     if (kind === 'end') {
-      // Lower descending end bell — distinct from start
-      tone(440, 0, 0.45, 'triangle', 0.75)
-      tone(330, 0.12, 0.5, 'triangle', 0.55)
-      tone(220, 0.28, 0.55, 'sine', 0.4)
-      vibrate([60, 40, 60])
+      // Longer double-buzz — clearly different from start
+      buzz(320, 0, 0.35, 0.85)
+      buzz(320, 0.45, 0.45, 0.85)
+      buzz(160, 0.45, 0.45, 0.4)
+      vibrate([80, 50, 100])
       return
     }
 
-    // Completion sequence
-    tone(523.25, 0, 0.25, 'triangle', 0.65)
-    tone(659.25, 0.22, 0.25, 'triangle', 0.65)
-    tone(783.99, 0.44, 0.3, 'triangle', 0.7)
-    tone(1046.5, 0.7, 0.55, 'sine', 0.55)
-    vibrate([80, 50, 80, 50, 120])
+    // Workout complete: three rising buzz blasts
+    buzz(280, 0, 0.28, 0.75)
+    buzz(360, 0.36, 0.28, 0.8)
+    buzz(480, 0.72, 0.45, 0.9)
+    buzz(960, 0.72, 0.45, 0.35)
+    vibrate([80, 50, 80, 50, 140])
   }
 
   function play(sound: SoundId): void {
@@ -162,23 +200,20 @@ export function useTimerAudio() {
     switch (sound) {
       case 'prep-beep':
         if (!settings.soundEnabled) return
-        tone(880, 0, 0.12, 'square', 0.45)
-        vibrate(30)
+        playBuzzer('prep')
         break
       case 'round-start':
-        playBell('start')
+        playBuzzer('start')
         break
       case 'warning':
         if (!settings.warningEnabled || !settings.soundEnabled) return
-        tone(740, 0, 0.15, 'square', 0.5)
-        tone(740, 0.2, 0.15, 'square', 0.5)
-        vibrate([40, 30, 40])
+        playBuzzer('warning')
         break
       case 'round-end':
-        playBell('end')
+        playBuzzer('end')
         break
       case 'complete':
-        playBell('complete')
+        playBuzzer('complete')
         break
     }
   }
@@ -190,7 +225,6 @@ export function useTimerAudio() {
   }
 
   function stopAll(): void {
-    // Oscillators are short-lived; suspend context to mute lingering tails when paused
     if (ctx && ctx.state === 'running') {
       void ctx.suspend()
     }
