@@ -136,28 +136,50 @@ function onInput(event: Event, min: number, max: number): void {
 }
 
 .stepper--compact {
-  gap: 0.3rem;
+  gap: 0.4rem;
 }
 
 .stepper--compact .stepper__label {
-  font-size: 0.72rem;
+  font-size: 0.82rem;
 }
 
 .stepper--compact .stepper__controls {
-  grid-template-columns: 2.35rem 1fr 2.35rem;
-  gap: 0.3rem;
+  grid-template-columns: 2.85rem 1fr 2.85rem;
+  gap: 0.4rem;
 }
 
 .stepper--compact .stepper__btn {
-  min-width: 2.35rem;
-  min-height: 2.55rem;
-  font-size: 1.25rem;
-  border-radius: 0.6rem;
+  min-width: 2.85rem;
+  min-height: 3.1rem;
+  font-size: 1.45rem;
+  border-radius: 0.7rem;
 }
 
 .stepper--compact .stepper__input {
-  min-height: 2.55rem;
-  font-size: clamp(1.05rem, 3.2vw, 1.35rem);
-  border-radius: 0.6rem;
+  min-height: 3.1rem;
+  font-size: clamp(1.2rem, 3.6vw, 1.55rem);
+  border-radius: 0.7rem;
+}
+
+@media (max-height: 700px) {
+  .stepper--compact .stepper__controls {
+    grid-template-columns: 2.4rem 1fr 2.4rem;
+    gap: 0.3rem;
+  }
+
+  .stepper--compact .stepper__btn {
+    min-width: 2.4rem;
+    min-height: 2.6rem;
+    font-size: 1.25rem;
+  }
+
+  .stepper--compact .stepper__input {
+    min-height: 2.6rem;
+    font-size: clamp(1.05rem, 3.2vw, 1.35rem);
+  }
+
+  .stepper--compact .stepper__label {
+    font-size: 0.72rem;
+  }
 }
 </style>

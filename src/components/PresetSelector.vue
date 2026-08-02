@@ -131,7 +131,7 @@ function timingLabel(preset: (typeof PRESETS)[number]): string {
 }
 
 .presets--compact {
-  gap: 0.35rem;
+  gap: 0.45rem;
 }
 
 .presets--compact .presets__grid {
@@ -140,8 +140,8 @@ function timingLabel(preset: (typeof PRESETS)[number]): string {
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  gap: 0.35rem;
-  padding-bottom: 0.1rem;
+  gap: 0.5rem;
+  padding-bottom: 0.15rem;
 }
 
 .presets--compact .presets__grid::-webkit-scrollbar {
@@ -150,17 +150,32 @@ function timingLabel(preset: (typeof PRESETS)[number]): string {
 
 .presets--compact .presets__item {
   flex: 0 0 auto;
-  min-height: 2.55rem;
-  padding: 0.3rem 0.7rem;
-  border-radius: 0.7rem;
+  min-height: 3.15rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: 0.85rem;
 }
 
 .presets--compact .presets__name {
-  font-size: 0.86rem;
+  font-size: 0.98rem;
   white-space: nowrap;
 }
 
 .presets--compact .presets__timing {
-  font-size: 0.68rem;
+  font-size: 0.76rem;
+}
+
+@media (max-height: 700px) {
+  .presets--compact .presets__item {
+    min-height: 2.65rem;
+    padding: 0.35rem 0.75rem;
+  }
+
+  .presets--compact .presets__name {
+    font-size: 0.88rem;
+  }
+
+  .presets--compact .presets__timing {
+    font-size: 0.7rem;
+  }
 }
 </style>

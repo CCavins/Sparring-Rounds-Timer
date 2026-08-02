@@ -57,11 +57,11 @@ export interface TimerEvent {
 }
 
 export const PRESETS: TimerPreset[] = [
+  { id: 'bjj', label: 'BJJ', roundDurationSeconds: 360, restDurationSeconds: 90 },
   { id: 'boxing', label: 'Boxing', roundDurationSeconds: 180, restDurationSeconds: 60 },
   { id: 'amateur', label: 'Amateur Boxing', roundDurationSeconds: 120, restDurationSeconds: 60 },
   { id: 'mma', label: 'MMA', roundDurationSeconds: 300, restDurationSeconds: 60 },
   { id: 'muay-thai', label: 'Muay Thai', roundDurationSeconds: 180, restDurationSeconds: 60 },
-  { id: 'bjj', label: 'BJJ', roundDurationSeconds: 360, restDurationSeconds: 90 },
   { id: 'custom', label: 'Custom', roundDurationSeconds: 180, restDurationSeconds: 60 },
 ]
 
@@ -75,14 +75,14 @@ export const PREPARATION_OPTIONS = [
 
 export const DEFAULT_CONFIGURATION: TimerConfiguration = {
   rounds: 5,
-  roundDurationSeconds: 180,
-  restDurationSeconds: 60,
+  roundDurationSeconds: 360,
+  restDurationSeconds: 90,
   preparationDurationSeconds: 10,
   soundEnabled: true,
   warningEnabled: true,
   vibrationEnabled: false,
   volume: 0.85,
-  presetId: 'boxing',
+  presetId: 'bjj',
   soundPackId: DEFAULT_SOUND_PACK_ID,
 }
 

@@ -177,32 +177,54 @@ function commit(): void {
 }
 
 .duration--compact {
-  gap: 0.3rem;
+  gap: 0.4rem;
 }
 
 .duration--compact .duration__label {
-  font-size: 0.72rem;
+  font-size: 0.82rem;
 }
 
 .duration--compact .duration__controls {
-  grid-template-columns: 2.35rem 1fr 2.35rem;
-  gap: 0.3rem;
+  grid-template-columns: 2.85rem 1fr 2.85rem;
+  gap: 0.4rem;
 }
 
 .duration--compact .duration__btn {
-  min-width: 2.35rem;
-  min-height: 2.55rem;
-  font-size: 1.25rem;
-  border-radius: 0.6rem;
+  min-width: 2.85rem;
+  min-height: 3.1rem;
+  font-size: 1.45rem;
+  border-radius: 0.7rem;
 }
 
 .duration--compact .duration__input {
-  min-height: 2.55rem;
-  font-size: clamp(1.05rem, 3.2vw, 1.35rem);
-  border-radius: 0.6rem;
+  min-height: 3.1rem;
+  font-size: clamp(1.2rem, 3.6vw, 1.55rem);
+  border-radius: 0.7rem;
 }
 
 .duration--disabled {
   opacity: 0.45;
+}
+
+@media (max-height: 700px) {
+  .duration--compact .duration__controls {
+    grid-template-columns: 2.4rem 1fr 2.4rem;
+    gap: 0.3rem;
+  }
+
+  .duration--compact .duration__btn {
+    min-width: 2.4rem;
+    min-height: 2.6rem;
+    font-size: 1.25rem;
+  }
+
+  .duration--compact .duration__input {
+    min-height: 2.6rem;
+    font-size: clamp(1.05rem, 3.2vw, 1.35rem);
+  }
+
+  .duration--compact .duration__label {
+    font-size: 0.72rem;
+  }
 }
 </style>

@@ -285,12 +285,12 @@ onUnmounted(() => {
   overflow: hidden;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: 0.55rem;
+  gap: clamp(0.55rem, 2.2vh, 1.25rem);
   padding:
-    max(0.5rem, env(safe-area-inset-top))
-    max(0.75rem, env(safe-area-inset-right))
-    max(0.55rem, env(safe-area-inset-bottom))
-    max(0.75rem, env(safe-area-inset-left));
+    max(0.85rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(0.85rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
   background:
     radial-gradient(ellipse 80% 45% at 12% -8%, rgba(255, 92, 45, 0.2), transparent 55%),
     radial-gradient(ellipse 55% 35% at 92% 0%, rgba(40, 160, 255, 0.1), transparent 50%),
@@ -301,8 +301,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.65rem;
-  min-height: 2.5rem;
+  gap: 0.85rem;
+  min-height: 3rem;
 }
 
 .setup__brand-block {
@@ -312,16 +312,16 @@ onUnmounted(() => {
 .setup__brand {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.55rem, 5.8vw, 2.1rem);
+  font-size: clamp(1.85rem, 6.5vw, 2.55rem);
   line-height: 1;
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 
 .setup__tagline {
-  margin: 0.18rem 0 0;
+  margin: 0.3rem 0 0;
   color: var(--text-dim);
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -329,11 +329,11 @@ onUnmounted(() => {
 .setup__settings {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  min-height: 2.55rem;
-  max-width: min(46vw, 11.5rem);
-  padding: 0.3rem 0.7rem 0.3rem 0.55rem;
-  border-radius: 0.85rem;
+  gap: 0.55rem;
+  min-height: 3rem;
+  max-width: min(48vw, 13rem);
+  padding: 0.4rem 0.85rem 0.4rem 0.65rem;
+  border-radius: 0.95rem;
   border: 1px solid var(--border-strong);
   background: rgba(255, 255, 255, 0.05);
   color: var(--text);
@@ -357,14 +357,14 @@ onUnmounted(() => {
 }
 
 .setup__settings-label {
-  font-size: 0.9rem;
+  font-size: 0.98rem;
   font-weight: 700;
   letter-spacing: 0.03em;
   line-height: 1.1;
 }
 
 .setup__settings-meta {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -375,16 +375,16 @@ onUnmounted(() => {
   min-height: 0;
   overflow: hidden;
   display: grid;
-  align-content: start;
-  gap: 0.55rem;
-  width: min(100%, 42rem);
+  align-content: space-evenly;
+  gap: clamp(0.65rem, 2.4vh, 1.35rem);
+  width: min(100%, 46rem);
   margin-inline: auto;
 }
 
 .setup__controls {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.45rem;
+  gap: 0.65rem;
 }
 
 .setup__prep {
@@ -392,13 +392,13 @@ onUnmounted(() => {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.35rem;
+  gap: 0.45rem;
   min-width: 0;
 }
 
 .setup__prep legend {
   font-family: var(--font-display);
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -408,7 +408,7 @@ onUnmounted(() => {
 .setup__prep-options {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.35rem;
+  gap: 0.45rem;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
@@ -424,15 +424,15 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 1 0 auto;
-  min-height: 2.25rem;
-  min-width: 2.75rem;
-  padding: 0.3rem 0.65rem;
+  flex: 1 1 0;
+  min-height: 2.75rem;
+  min-width: 3.1rem;
+  padding: 0.4rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   font-weight: 650;
   touch-action: manipulation;
 }
@@ -453,24 +453,24 @@ onUnmounted(() => {
 }
 
 .setup__footer {
-  width: min(100%, 42rem);
+  width: min(100%, 46rem);
   margin-inline: auto;
 }
 
 .setup__start {
   width: 100%;
-  min-height: 3.25rem;
+  min-height: clamp(3.35rem, 7.5vh, 4.1rem);
   border: 0;
-  border-radius: 0.95rem;
+  border-radius: 1.05rem;
   background: linear-gradient(135deg, #ff5c2d 0%, #ff8c28 55%, #ffb347 100%);
   color: #1a0800;
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: clamp(1.3rem, 3.5vh, 1.55rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 10px 28px rgba(255, 92, 45, 0.26);
+  box-shadow: 0 12px 32px rgba(255, 92, 45, 0.28);
   touch-action: manipulation;
 }
 
@@ -490,7 +490,12 @@ onUnmounted(() => {
 
 @media (max-height: 700px) {
   .setup {
-    gap: 0.4rem;
+    gap: 0.45rem;
+    padding:
+      max(0.55rem, env(safe-area-inset-top))
+      max(0.8rem, env(safe-area-inset-right))
+      max(0.55rem, env(safe-area-inset-bottom))
+      max(0.8rem, env(safe-area-inset-left));
   }
 
   .setup__tagline {
@@ -498,22 +503,32 @@ onUnmounted(() => {
   }
 
   .setup__body {
+    align-content: start;
+    gap: 0.5rem;
+  }
+
+  .setup__controls {
     gap: 0.4rem;
   }
 
+  .setup__prep-option {
+    min-height: 2.3rem;
+    font-size: 0.86rem;
+  }
+
   .setup__start {
-    min-height: 3rem;
-    font-size: 1.15rem;
+    min-height: 3.1rem;
+    font-size: 1.2rem;
   }
 }
 
 @media (max-height: 560px) {
   .setup__brand {
-    font-size: 1.35rem;
+    font-size: 1.4rem;
   }
 
   .setup__settings {
-    min-height: 2.25rem;
+    min-height: 2.35rem;
   }
 
   .setup__settings-meta {
@@ -523,9 +538,13 @@ onUnmounted(() => {
 
 @media (orientation: landscape) and (max-height: 500px) {
   .setup {
-    gap: 0.3rem;
-    padding-top: max(0.3rem, env(safe-area-inset-top));
-    padding-bottom: max(0.3rem, env(safe-area-inset-bottom));
+    gap: 0.35rem;
+    padding-top: max(0.35rem, env(safe-area-inset-top));
+    padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
+  }
+
+  .setup__body {
+    align-content: start;
   }
 
   .setup__controls {

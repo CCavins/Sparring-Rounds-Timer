@@ -42,7 +42,7 @@ describe('RoundTimerEngine', () => {
     engine.start(makeConfig({ preparationDurationSeconds: 0, rounds: 2 }))
     expect(engine.state.phase).toBe('active')
     expect(engine.state.currentRound).toBe(1)
-    expect(engine.state.remainingMilliseconds).toBe(180_000)
+    expect(engine.state.remainingMilliseconds).toBe(360_000)
   })
 
   it('transitions from preparation to active', () => {
