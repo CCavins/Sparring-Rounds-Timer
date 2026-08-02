@@ -325,17 +325,24 @@ watch(
   { deep: true },
 )
 
+function persistConfig(): void {
+  saveConfiguration(config.value)
+}
+
 onMounted(() => {
   detectDisplayMode()
   syncAudioSettings()
   window.addEventListener('keydown', onKeydown)
   document.addEventListener('visibilitychange', onVisibility)
+  window.addEventListener('pagehide', persistConfig)
 })
 
 onUnmounted(() => {
   unsubscribe()
   window.removeEventListener('keydown', onKeydown)
   document.removeEventListener('visibilitychange', onVisibility)
+  window.removeEventListener('pagehide', persistConfig)
+  persistConfig()
   if (skipHoldTimer) clearTimeout(skipHoldTimer)
   wakeDesired = false
   void wakeLock.release()

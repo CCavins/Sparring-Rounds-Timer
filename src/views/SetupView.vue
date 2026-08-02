@@ -3,11 +3,10 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import DurationControl from '../components/DurationControl.vue'
 import NumberStepper from '../components/NumberStepper.vue'
 import PresetSelector from '../components/PresetSelector.vue'
-import SavedPresetsModal from '../components/SavedPresetsModal.vue'
 import SettingsModal from '../components/SettingsModal.vue'
 import SoundPackModal from '../components/SoundPackModal.vue'
 import type { SavedCustomPreset } from '../types/presets'
-import { DEFAULT_SOUND_PACK_ID } from '../types/sounds'
+import { DEFAULT_SOUND_PACK_ID, getSoundPack } from '../types/sounds'
 import {
   LIMITS,
   PREPARATION_OPTIONS,
@@ -31,12 +30,13 @@ const emit = defineEmits<{
 }>()
 
 const settingsOpen = ref(false)
-const savedOpen = ref(false)
 const soundModalOpen = ref(false)
 
 const vibrationSupported = computed(
   () => typeof navigator !== 'undefined' && 'vibrate' in navigator,
 )
+
+const soundPackLabel = computed(() => getSoundPack(props.config.soundPackId).label)
 
 function patch(partial: Partial<TimerConfiguration>): void {
   const next = { ...props.config, ...partial }
@@ -107,8 +107,16 @@ watch(
   { deep: true },
 )
 
+function persistNow(): void {
+  saveConfiguration(props.config)
+}
+
+function onVisibilityPersist(): void {
+  if (document.visibilityState === 'hidden') persistNow()
+}
+
 function onKeydown(event: KeyboardEvent): void {
-  if (settingsOpen.value || savedOpen.value || soundModalOpen.value) return
+  if (settingsOpen.value || soundModalOpen.value) return
   const target = event.target as HTMLElement | null
   if (
     target &&
@@ -125,11 +133,17 @@ function onKeydown(event: KeyboardEvent): void {
 onMounted(() => {
   document.documentElement.classList.add('setup-active')
   window.addEventListener('keydown', onKeydown)
+  // iOS Safari can drop in-memory state on background; flush storage on hide.
+  window.addEventListener('pagehide', persistNow)
+  document.addEventListener('visibilitychange', onVisibilityPersist)
 })
 
 onUnmounted(() => {
   document.documentElement.classList.remove('setup-active')
   window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('pagehide', persistNow)
+  document.removeEventListener('visibilitychange', onVisibilityPersist)
+  persistNow()
 })
 </script>
 
@@ -140,23 +154,24 @@ onUnmounted(() => {
         <h1 class="setup__brand">Spar Timer</h1>
         <p class="setup__tagline">Rounds · Rest · Go</p>
       </div>
-      <div class="setup__top-actions">
-        <button type="button" class="setup__chip" @click="savedOpen = true">Saved</button>
-        <button
-          type="button"
-          class="setup__icon"
-          aria-label="Open settings"
-          title="Settings"
-          @click="settingsOpen = true"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm8.1 2.7-1.1-.2a6.8 6.8 0 0 0-.7-1.7l.7-.9a1 1 0 0 0-.1-1.3l-1.4-1.4a1 1 0 0 0-1.3-.1l-.9.7a6.8 6.8 0 0 0-1.7-.7l-.2-1.1A1 1 0 0 0 12.4 3h-2a1 1 0 0 0-1 .8l-.2 1.1a6.8 6.8 0 0 0-1.7.7l-.9-.7a1 1 0 0 0-1.3.1L3.9 6.4a1 1 0 0 0-.1 1.3l.7.9a6.8 6.8 0 0 0-.7 1.7l-1.1.2a1 1 0 0 0-.8 1v2a1 1 0 0 0 .8 1l1.1.2c.16.6.4 1.17.7 1.7l-.7.9a1 1 0 0 0 .1 1.3l1.4 1.4a1 1 0 0 0 1.3.1l.9-.7c.53.3 1.1.54 1.7.7l.2 1.1a1 1 0 0 0 1 .8h2a1 1 0 0 0 1-.8l.2-1.1c.6-.16 1.17-.4 1.7-.7l.9.7a1 1 0 0 0 1.3-.1l1.4-1.4a1 1 0 0 0 .1-1.3l-.7-.9c.3-.53.54-1.1.7-1.7l1.1-.2a1 1 0 0 0 .8-1v-2a1 1 0 0 0-.8-1Z"
-              fill="currentColor"
-            />
-          </svg>
-        </button>
-      </div>
+      <button
+        type="button"
+        class="setup__settings"
+        data-testid="open-settings"
+        aria-label="Open settings"
+        @click="settingsOpen = true"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm8.1 2.7-1.1-.2a6.8 6.8 0 0 0-.7-1.7l.7-.9a1 1 0 0 0-.1-1.3l-1.4-1.4a1 1 0 0 0-1.3-.1l-.9.7a6.8 6.8 0 0 0-1.7-.7l-.2-1.1A1 1 0 0 0 12.4 3h-2a1 1 0 0 0-1 .8l-.2 1.1a6.8 6.8 0 0 0-1.7.7l-.9-.7a1 1 0 0 0-1.3.1L3.9 6.4a1 1 0 0 0-.1 1.3l.7.9a6.8 6.8 0 0 0-.7 1.7l-1.1.2a1 1 0 0 0-.8 1v2a1 1 0 0 0 .8 1l1.1.2c.16.6.4 1.17.7 1.7l-.7.9a1 1 0 0 0 .1 1.3l1.4 1.4a1 1 0 0 0 1.3.1l.9-.7c.53.3 1.1.54 1.7.7l.2 1.1a1 1 0 0 0 1 .8h2a1 1 0 0 0 1-.8l.2-1.1c.6-.16 1.17-.4 1.7-.7l.9.7a1 1 0 0 0 1.3-.1l1.4-1.4a1 1 0 0 0 .1-1.3l-.7-.9c.3-.53.54-1.1.7-1.7l1.1-.2a1 1 0 0 0 .8-1v-2a1 1 0 0 0-.8-1Z"
+            fill="currentColor"
+          />
+        </svg>
+        <span class="setup__settings-copy">
+          <span class="setup__settings-label">Settings</span>
+          <span class="setup__settings-meta">{{ soundPackLabel }}</span>
+        </span>
+      </button>
     </header>
 
     <div class="setup__body">
@@ -231,6 +246,7 @@ onUnmounted(() => {
 
     <SettingsModal
       :open="settingsOpen"
+      :config="config"
       :sound-enabled="config.soundEnabled"
       :warning-enabled="config.warningEnabled"
       :vibration-enabled="config.vibrationEnabled"
@@ -247,13 +263,7 @@ onUnmounted(() => {
       @test="emit('testSound')"
       @open-sound-packs="openSoundPacks"
       @reset-sound-pack="resetSoundPack"
-    />
-
-    <SavedPresetsModal
-      :open="savedOpen"
-      :config="config"
-      @close="savedOpen = false"
-      @load="loadSavedPreset"
+      @load-saved="loadSavedPreset"
     />
 
     <SoundPackModal
@@ -316,42 +326,49 @@ onUnmounted(() => {
   text-transform: uppercase;
 }
 
-.setup__top-actions {
-  display: flex;
+.setup__settings {
+  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  flex-shrink: 0;
-}
-
-.setup__chip,
-.setup__icon {
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
+  gap: 0.45rem;
+  min-height: 2.55rem;
+  max-width: min(46vw, 11.5rem);
+  padding: 0.3rem 0.7rem 0.3rem 0.55rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   cursor: pointer;
   touch-action: manipulation;
+  flex-shrink: 0;
 }
 
-.setup__chip {
-  min-height: 2.35rem;
-  padding: 0.35rem 0.85rem;
-  border-radius: 999px;
-  font-size: 0.88rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-}
-
-.setup__icon {
-  width: 2.45rem;
-  height: 2.45rem;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-}
-
-.setup__icon svg {
+.setup__settings svg {
   width: 1.15rem;
   height: 1.15rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.setup__settings-copy {
+  display: grid;
+  gap: 0.05rem;
+  min-width: 0;
+  text-align: left;
+}
+
+.setup__settings-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+}
+
+.setup__settings-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .setup__body {
@@ -495,13 +512,12 @@ onUnmounted(() => {
     font-size: 1.35rem;
   }
 
-  .setup__chip {
-    min-height: 2.1rem;
+  .setup__settings {
+    min-height: 2.25rem;
   }
 
-  .setup__icon {
-    width: 2.1rem;
-    height: 2.1rem;
+  .setup__settings-meta {
+    display: none;
   }
 }
 

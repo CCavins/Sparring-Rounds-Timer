@@ -76,10 +76,14 @@ function summary(preset: SavedCustomPreset): string {
 
 <template>
   <section class="saved" :class="{ 'saved--compact': compact }" aria-labelledby="saved-heading">
-    <h2 v-if="!compact" id="saved-heading" class="saved__heading">Saved Custom Setups</h2>
-    <h2 v-else id="saved-heading" class="sr-only">Saved Custom Setups</h2>
+    <h2 id="saved-heading" class="saved__heading">
+      {{ compact ? 'Saved Setups' : 'Saved Custom Setups' }}
+    </h2>
     <p v-if="!compact" class="saved__hint">
       Save the current rounds, times, and prep for quick reuse on this device.
+    </p>
+    <p v-else class="saved__hint">
+      Optional named presets. Your last rounds, times, and sounds are always remembered.
     </p>
 
     <div class="saved__form">
@@ -253,15 +257,7 @@ function summary(preset: SavedCustomPreset): string {
   gap: 0.55rem;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+.saved--compact .saved__heading {
+  color: var(--text);
 }
 </style>

@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import type { SavedCustomPreset } from '../types/presets'
+import type { TimerConfiguration } from '../types/timer'
 import AudioSettings from './AudioSettings.vue'
+import SavedPresets from './SavedPresets.vue'
 
 const props = defineProps<{
   open: boolean
+  config: TimerConfiguration
   soundEnabled: boolean
   warningEnabled: boolean
   vibrationEnabled: boolean
@@ -23,6 +27,7 @@ const emit = defineEmits<{
   test: []
   openSoundPacks: []
   resetSoundPack: []
+  loadSaved: [preset: SavedCustomPreset]
 }>()
 
 const dialogRef = ref<HTMLDialogElement | null>(null)
@@ -51,6 +56,11 @@ function onCancel(): void {
   emit('close')
 }
 
+function onLoadSaved(preset: SavedCustomPreset): void {
+  emit('loadSaved', preset)
+  emit('close')
+}
+
 function onKeydown(event: KeyboardEvent): void {
   if (!props.open) return
   if (event.key === 'Escape') {
@@ -72,7 +82,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   >
     <div class="settings-modal__panel">
       <header class="settings-modal__header">
-        <h2 id="settings-modal-title" class="settings-modal__title">Settings</h2>
+        <div class="settings-modal__heading">
+          <h2 id="settings-modal-title" class="settings-modal__title">Settings</h2>
+          <p class="settings-modal__persist">Saved automatically on this device</p>
+        </div>
         <button
           ref="closeBtn"
           type="button"
@@ -100,6 +113,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         @open-sound-packs="emit('openSoundPacks')"
         @reset-sound-pack="emit('resetSoundPack')"
       />
+
+      <div class="settings-modal__divider" aria-hidden="true" />
+
+      <SavedPresets compact :config="config" @load="onLoadSaved" />
 
       <p v-if="showIosHint" class="settings-modal__ios">
         Tip: Share → Add to Home Screen for a full-screen app experience.
@@ -134,9 +151,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 .settings-modal__header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.settings-modal__heading {
+  min-width: 0;
 }
 
 .settings-modal__title {
@@ -145,6 +166,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   font-size: 1.35rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.settings-modal__persist {
+  margin: 0.25rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.82rem;
 }
 
 .settings-modal__close {
@@ -158,6 +185,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   font-weight: 700;
   cursor: pointer;
   touch-action: manipulation;
+  flex-shrink: 0;
+}
+
+.settings-modal__divider {
+  height: 1px;
+  background: var(--border);
 }
 
 .settings-modal__ios {
