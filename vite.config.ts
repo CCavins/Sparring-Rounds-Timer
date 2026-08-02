@@ -16,7 +16,7 @@ export default defineConfig({
         'icons/*.png',
         'icons/*.svg',
         'sounds/LICENSE.md',
-        'sounds/v3/*.mp3',
+        'sounds/v4/*.mp3',
       ],
       manifest: {
         name: 'Spar Timer',
@@ -69,7 +69,7 @@ export default defineConfig({
             urlPattern: ({ url }) => url.pathname.includes('/sounds/'),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'spar-timer-sounds-v3',
+              cacheName: 'spar-timer-sounds-v4',
               expiration: {
                 maxEntries: 40,
                 maxAgeSeconds: 60 * 60 * 24 * 365,
