@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { PACK_CUES, resolveCueUrl } from '../audio/soundManifest'
 import { DEFAULT_SOUND_PACK_ID } from '../types/sounds'
 import type { SoundId } from './soundIds'
 
@@ -12,17 +13,27 @@ interface AudioSettings {
   soundPackId: string
 }
 
+interface PlayHandle {
+  durationMs: number
+  stop: () => void
+}
+
 /**
- * Gym-ready synthesized audio via Web Audio API.
- * Supports multiple serious and fun sound packs.
+ * Sample-based timer audio (BigSoundBank CC0 files) with Web Audio playback.
  */
 export function useTimerAudio() {
   const unlocked = ref(false)
   const initFailed = ref(false)
   const notice = ref('')
+  const isPreviewPlaying = ref(false)
 
   let ctx: AudioContext | null = null
   let masterGain: GainNode | null = null
+  const buffers = new Map<string, AudioBuffer>()
+  let preloadPromise: Promise<void> | null = null
+  let activeSources: AudioBufferSourceNode[] = []
+  let previewTimer: ReturnType<typeof setTimeout> | null = null
+
   let settings: AudioSettings = {
     soundEnabled: true,
     warningEnabled: true,
@@ -49,6 +60,34 @@ export function useTimerAudio() {
     }
   }
 
+  async function loadBuffer(fileName: string): Promise<AudioBuffer | null> {
+    if (buffers.has(fileName)) return buffers.get(fileName) ?? null
+    const audio = ensureContext()
+    if (!audio) return null
+    try {
+      const response = await fetch(resolveCueUrl(fileName))
+      if (!response.ok) throw new Error(`Failed to load ${fileName}`)
+      const data = await response.arrayBuffer()
+      const buffer = await audio.decodeAudioData(data.slice(0))
+      buffers.set(fileName, buffer)
+      return buffer
+    } catch {
+      return null
+    }
+  }
+
+  async function preloadAll(): Promise<void> {
+    if (preloadPromise) return preloadPromise
+    preloadPromise = (async () => {
+      const files = new Set<string>()
+      for (const pack of Object.values(PACK_CUES)) {
+        for (const file of Object.values(pack)) files.add(file)
+      }
+      await Promise.all([...files].map((file) => loadBuffer(file)))
+    })()
+    return preloadPromise
+  }
+
   async function unlock(): Promise<boolean> {
     const audio = ensureContext()
     if (!audio || !masterGain) {
@@ -69,6 +108,7 @@ export function useTimerAudio() {
       unlocked.value = true
       initFailed.value = false
       notice.value = ''
+      void preloadAll()
       return true
     } catch {
       initFailed.value = true
@@ -96,428 +136,150 @@ export function useTimerAudio() {
     }
   }
 
-  function osc(
-    frequency: number,
-    startOffset: number,
-    duration: number,
-    type: OscillatorType,
-    gainValue: number,
-    freqEnd?: number,
-  ): void {
-    if (!ctx || !masterGain) return
-    const t0 = ctx.currentTime + startOffset
-    const t1 = t0 + duration
-    const node = ctx.createOscillator()
-    const gain = ctx.createGain()
-    node.type = type
-    node.frequency.setValueAtTime(frequency, t0)
-    if (freqEnd !== undefined) {
-      node.frequency.exponentialRampToValueAtTime(Math.max(1, freqEnd), t1)
-    }
-    gain.gain.setValueAtTime(0.0001, t0)
-    gain.gain.exponentialRampToValueAtTime(gainValue, t0 + 0.01)
-    gain.gain.exponentialRampToValueAtTime(0.0001, t1)
-    node.connect(gain)
-    gain.connect(masterGain)
-    node.start(t0)
-    node.stop(t1 + 0.02)
-  }
-
-  function buzz(
-    frequency: number,
-    startOffset: number,
-    duration: number,
-    gainValue = 0.7,
-  ): void {
-    if (!ctx || !masterGain) return
-    const t0 = ctx.currentTime + startOffset
-    const t1 = t0 + duration
-    const filter = ctx.createBiquadFilter()
-    filter.type = 'bandpass'
-    filter.frequency.setValueAtTime(frequency * 1.4, t0)
-    filter.Q.setValueAtTime(1.1, t0)
-    const gain = ctx.createGain()
-    gain.gain.setValueAtTime(0.0001, t0)
-    gain.gain.exponentialRampToValueAtTime(gainValue, t0 + 0.008)
-    gain.gain.setValueAtTime(gainValue, Math.max(t0 + 0.01, t1 - 0.04))
-    gain.gain.exponentialRampToValueAtTime(0.0001, t1)
-    filter.connect(gain)
-    gain.connect(masterGain)
-    const square = ctx.createOscillator()
-    square.type = 'square'
-    square.frequency.setValueAtTime(frequency, t0)
-    square.connect(filter)
-    const saw = ctx.createOscillator()
-    saw.type = 'sawtooth'
-    saw.frequency.setValueAtTime(frequency * 1.01, t0)
-    const sawGain = ctx.createGain()
-    sawGain.gain.value = 0.45
-    saw.connect(sawGain)
-    sawGain.connect(filter)
-    square.start(t0)
-    saw.start(t0)
-    square.stop(t1 + 0.02)
-    saw.stop(t1 + 0.02)
-  }
-
-  function noiseBurst(startOffset: number, duration: number, gainValue: number, freq = 400): void {
-    if (!ctx || !masterGain) return
-    const t0 = ctx.currentTime + startOffset
-    const frames = Math.max(1, Math.floor(ctx.sampleRate * duration))
-    const buffer = ctx.createBuffer(1, frames, ctx.sampleRate)
-    const data = buffer.getChannelData(0)
-    for (let i = 0; i < frames; i += 1) {
-      data[i] = Math.random() * 2 - 1
-    }
-    const source = ctx.createBufferSource()
-    source.buffer = buffer
-    const filter = ctx.createBiquadFilter()
-    filter.type = 'lowpass'
-    filter.frequency.setValueAtTime(freq, t0)
-    const gain = ctx.createGain()
-    gain.gain.setValueAtTime(gainValue, t0)
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration)
-    source.connect(filter)
-    filter.connect(gain)
-    gain.connect(masterGain)
-    source.start(t0)
-    source.stop(t0 + duration + 0.02)
-  }
-
-  function playPackSound(sound: SoundId): void {
-    const pack = settings.soundPackId
-
-    if (sound === 'prep-beep') {
-      switch (pack) {
-        case 'boxing-bell':
-          osc(880, 0, 0.08, 'sine', 0.35)
-          break
-        case 'whistle':
-          osc(1800, 0, 0.08, 'sine', 0.3)
-          break
-        case 'duck':
-          osc(420, 0, 0.1, 'sawtooth', 0.35, 280)
-          break
-        case 'cat':
-          osc(700, 0, 0.12, 'triangle', 0.3, 900)
-          break
-        case 'dog':
-          osc(220, 0, 0.08, 'square', 0.3)
-          break
-        case 'chicken':
-          osc(650, 0, 0.06, 'square', 0.28, 900)
-          break
-        case 'fart':
-          osc(120, 0, 0.12, 'sawtooth', 0.35, 70)
-          break
-        case 'boing':
-          osc(500, 0, 0.12, 'sine', 0.35, 200)
-          break
-        case 'laser':
-          osc(1200, 0, 0.08, 'square', 0.25, 600)
-          break
-        case 'trombone':
-          osc(220, 0, 0.12, 'sawtooth', 0.3, 180)
-          break
-        case 'air-horn':
-          buzz(380, 0, 0.1, 0.45)
-          break
-        case 'digital-beep':
-          osc(1000, 0, 0.07, 'square', 0.3)
-          break
-        default:
-          buzz(920, 0, 0.1, 0.55)
+  function stopActiveSources(): void {
+    for (const source of activeSources) {
+      try {
+        source.stop()
+      } catch {
+        // already stopped
       }
-      vibrate(30)
-      return
     }
+    activeSources = []
+  }
+
+  function cueFile(packId: string, sound: SoundId): string {
+    const pack = PACK_CUES[packId] ?? PACK_CUES[DEFAULT_SOUND_PACK_ID]!
+    return pack[sound]
+  }
+
+  async function playBuffer(
+    fileName: string,
+    options: { gain?: number; whenOffset?: number; rate?: number } = {},
+  ): Promise<PlayHandle> {
+    const audio = ensureContext()
+    if (!audio || !masterGain) {
+      return { durationMs: 0, stop: () => undefined }
+    }
+
+    const buffer = (await loadBuffer(fileName)) ?? buffers.get(fileName)
+    if (!buffer) {
+      return { durationMs: 0, stop: () => undefined }
+    }
+
+    if (audio.state === 'suspended') {
+      await audio.resume()
+    }
+
+    const source = audio.createBufferSource()
+    source.buffer = buffer
+    source.playbackRate.value = options.rate ?? 1
+
+    const gain = audio.createGain()
+    gain.gain.value = options.gain ?? 1
+    source.connect(gain)
+    gain.connect(masterGain)
+
+    const startAt = audio.currentTime + (options.whenOffset ?? 0)
+    source.start(startAt)
+    activeSources.push(source)
+    source.onended = () => {
+      activeSources = activeSources.filter((item) => item !== source)
+    }
+
+    const durationMs = (buffer.duration / (options.rate ?? 1)) * 1000 + (options.whenOffset ?? 0) * 1000
+    return {
+      durationMs,
+      stop: () => {
+        try {
+          source.stop()
+        } catch {
+          // ignore
+        }
+      },
+    }
+  }
+
+  async function playPackSound(sound: SoundId, packId = settings.soundPackId): Promise<number> {
+    const file = cueFile(packId, sound)
 
     if (sound === 'warning') {
-      switch (pack) {
-        case 'boxing-bell':
-          osc(990, 0, 0.12, 'triangle', 0.45)
-          osc(990, 0.18, 0.12, 'triangle', 0.45)
-          break
-        case 'whistle':
-          osc(2000, 0, 0.12, 'sine', 0.4)
-          osc(2000, 0.18, 0.12, 'sine', 0.4)
-          break
-        case 'duck':
-          osc(380, 0, 0.12, 'sawtooth', 0.4, 240)
-          osc(380, 0.2, 0.12, 'sawtooth', 0.4, 240)
-          break
-        case 'cat':
-          osc(800, 0, 0.15, 'triangle', 0.4, 1100)
-          osc(800, 0.22, 0.15, 'triangle', 0.4, 1100)
-          break
-        case 'dog':
-          osc(180, 0, 0.1, 'square', 0.4)
-          osc(180, 0.18, 0.1, 'square', 0.4)
-          break
-        case 'chicken':
-          osc(700, 0, 0.08, 'square', 0.35, 1000)
-          osc(700, 0.14, 0.08, 'square', 0.35, 1000)
-          break
-        case 'fart':
-          osc(140, 0, 0.16, 'sawtooth', 0.45, 80)
-          osc(130, 0.22, 0.16, 'sawtooth', 0.45, 70)
-          break
-        case 'boing':
-          osc(600, 0, 0.15, 'sine', 0.4, 180)
-          osc(600, 0.22, 0.15, 'sine', 0.4, 180)
-          break
-        case 'laser':
-          osc(1400, 0, 0.1, 'square', 0.35, 400)
-          osc(1400, 0.18, 0.1, 'square', 0.35, 400)
-          break
-        case 'trombone':
-          osc(196, 0, 0.18, 'sawtooth', 0.4, 160)
-          osc(175, 0.24, 0.2, 'sawtooth', 0.4, 140)
-          break
-        case 'air-horn':
-          buzz(420, 0, 0.14, 0.55)
-          buzz(420, 0.22, 0.14, 0.55)
-          break
-        case 'digital-beep':
-          osc(880, 0, 0.1, 'square', 0.4)
-          osc(880, 0.18, 0.1, 'square', 0.4)
-          break
-        default:
-          buzz(680, 0, 0.14, 0.65)
-          buzz(680, 0.22, 0.14, 0.65)
-      }
+      const first = await playBuffer(file, { gain: 0.95 })
+      const second = await playBuffer(file, { gain: 0.95, whenOffset: 0.22 })
       vibrate([40, 30, 40])
-      return
+      return Math.max(first.durationMs, second.durationMs)
     }
 
-    if (sound === 'round-start') {
-      switch (pack) {
-        case 'boxing-bell':
-          osc(880, 0, 0.5, 'triangle', 0.7)
-          osc(1320, 0.02, 0.55, 'sine', 0.35)
-          osc(880, 0.18, 0.4, 'triangle', 0.45)
-          break
-        case 'air-horn':
-          buzz(280, 0, 0.7, 0.9)
-          buzz(560, 0, 0.7, 0.35)
-          noiseBurst(0, 0.15, 0.2, 800)
-          break
-        case 'whistle':
-          osc(1800, 0, 0.35, 'sine', 0.55)
-          osc(2100, 0.08, 0.3, 'sine', 0.4)
-          osc(1900, 0.2, 0.25, 'sine', 0.35)
-          break
-        case 'digital-beep':
-          osc(880, 0, 0.12, 'square', 0.55)
-          osc(1175, 0.14, 0.18, 'square', 0.55)
-          break
-        case 'duck':
-          osc(380, 0, 0.16, 'sawtooth', 0.55, 220)
-          osc(360, 0.18, 0.16, 'sawtooth', 0.5, 200)
-          osc(400, 0.36, 0.2, 'sawtooth', 0.55, 240)
-          break
-        case 'cat':
-          osc(600, 0, 0.2, 'triangle', 0.45, 950)
-          osc(700, 0.18, 0.28, 'triangle', 0.5, 1200)
-          break
-        case 'dog':
-          osc(160, 0, 0.12, 'square', 0.55)
-          osc(140, 0.16, 0.14, 'square', 0.55)
-          osc(180, 0.34, 0.18, 'square', 0.6)
-          break
-        case 'chicken':
-          osc(700, 0, 0.07, 'square', 0.4, 1000)
-          osc(650, 0.1, 0.07, 'square', 0.4, 950)
-          osc(800, 0.22, 0.22, 'sawtooth', 0.55, 1200)
-          break
-        case 'fart':
-          osc(180, 0, 0.18, 'sawtooth', 0.6, 90)
-          noiseBurst(0.05, 0.2, 0.25, 220)
-          osc(120, 0.22, 0.35, 'sawtooth', 0.65, 55)
-          break
-        case 'boing':
-          osc(700, 0, 0.35, 'sine', 0.6, 120)
-          osc(900, 0.05, 0.3, 'triangle', 0.35, 160)
-          break
-        case 'laser':
-          osc(1600, 0, 0.18, 'square', 0.5, 220)
-          osc(1800, 0.16, 0.18, 'square', 0.45, 280)
-          break
-        case 'trombone':
-          osc(392, 0, 0.25, 'sawtooth', 0.5)
-          osc(349, 0.28, 0.35, 'sawtooth', 0.55, 300)
-          break
-        default:
-          buzz(440, 0, 0.55, 0.85)
-          buzz(880, 0, 0.55, 0.35)
-      }
-      vibrate(100)
-      return
+    if (sound === 'prep-beep') {
+      const handle = await playBuffer(file, { gain: 0.7, rate: 1.15 })
+      vibrate(30)
+      return handle.durationMs
     }
 
-    if (sound === 'round-end') {
-      switch (pack) {
-        case 'boxing-bell':
-          osc(660, 0, 0.55, 'triangle', 0.7)
-          osc(440, 0.15, 0.6, 'triangle', 0.55)
-          osc(330, 0.35, 0.55, 'sine', 0.4)
-          break
-        case 'air-horn':
-          buzz(240, 0, 0.35, 0.85)
-          buzz(240, 0.45, 0.5, 0.85)
-          break
-        case 'whistle':
-          osc(1600, 0, 0.2, 'sine', 0.5)
-          osc(1400, 0.25, 0.35, 'sine', 0.45)
-          break
-        case 'digital-beep':
-          osc(660, 0, 0.14, 'square', 0.5)
-          osc(440, 0.18, 0.22, 'square', 0.5)
-          break
-        case 'duck':
-          osc(300, 0, 0.2, 'sawtooth', 0.5, 180)
-          osc(280, 0.28, 0.28, 'sawtooth', 0.55, 150)
-          break
-        case 'cat':
-          osc(900, 0, 0.25, 'triangle', 0.45, 500)
-          osc(700, 0.28, 0.35, 'triangle', 0.5, 400)
-          break
-        case 'dog':
-          osc(200, 0, 0.2, 'square', 0.5, 120)
-          osc(150, 0.28, 0.3, 'square', 0.55)
-          break
-        case 'chicken':
-          osc(900, 0, 0.35, 'sawtooth', 0.55, 400)
-          noiseBurst(0.1, 0.2, 0.15, 1200)
-          break
-        case 'fart':
-          osc(200, 0, 0.25, 'sawtooth', 0.65, 70)
-          noiseBurst(0.1, 0.35, 0.3, 180)
-          osc(90, 0.3, 0.45, 'sawtooth', 0.7, 40)
-          break
-        case 'boing':
-          osc(400, 0, 0.2, 'sine', 0.5, 90)
-          osc(300, 0.22, 0.3, 'sine', 0.55, 70)
-          break
-        case 'laser':
-          osc(900, 0, 0.2, 'square', 0.45, 120)
-          osc(700, 0.22, 0.28, 'square', 0.45, 80)
-          break
-        case 'trombone':
-          osc(294, 0, 0.28, 'sawtooth', 0.5)
-          osc(247, 0.32, 0.28, 'sawtooth', 0.5)
-          osc(196, 0.64, 0.45, 'sawtooth', 0.55, 160)
-          break
-        default:
-          buzz(320, 0, 0.35, 0.85)
-          buzz(320, 0.45, 0.45, 0.85)
-          buzz(160, 0.45, 0.45, 0.4)
-      }
+    if (sound === 'round-end' && packId === 'gym-buzzer') {
+      const first = await playBuffer(file, { gain: 1 })
+      const second = await playBuffer(file, { gain: 1, whenOffset: 0.35, rate: 0.92 })
       vibrate([80, 50, 100])
-      return
+      return Math.max(first.durationMs, second.durationMs)
     }
 
-    // complete
-    switch (pack) {
-      case 'boxing-bell':
-        osc(660, 0, 0.25, 'triangle', 0.55)
-        osc(880, 0.22, 0.25, 'triangle', 0.55)
-        osc(1100, 0.44, 0.45, 'triangle', 0.65)
-        break
-      case 'air-horn':
-        buzz(300, 0, 0.25, 0.7)
-        buzz(360, 0.3, 0.25, 0.75)
-        buzz(420, 0.6, 0.45, 0.85)
-        break
-      case 'whistle':
-        osc(1700, 0, 0.15, 'sine', 0.4)
-        osc(1900, 0.18, 0.15, 'sine', 0.45)
-        osc(2100, 0.36, 0.35, 'sine', 0.5)
-        break
-      case 'digital-beep':
-        osc(523, 0, 0.12, 'square', 0.45)
-        osc(659, 0.14, 0.12, 'square', 0.45)
-        osc(784, 0.28, 0.12, 'square', 0.45)
-        osc(1046, 0.42, 0.28, 'square', 0.55)
-        break
-      case 'duck':
-        osc(360, 0, 0.14, 'sawtooth', 0.5, 220)
-        osc(400, 0.18, 0.14, 'sawtooth', 0.5, 240)
-        osc(440, 0.36, 0.22, 'sawtooth', 0.55, 260)
-        break
-      case 'cat':
-        osc(700, 0, 0.2, 'triangle', 0.4, 1100)
-        osc(850, 0.24, 0.35, 'triangle', 0.5, 1300)
-        break
-      case 'dog':
-        osc(170, 0, 0.1, 'square', 0.5)
-        osc(190, 0.14, 0.1, 'square', 0.5)
-        osc(210, 0.28, 0.2, 'square', 0.6)
-        break
-      case 'chicken':
-        osc(750, 0, 0.08, 'square', 0.4, 1100)
-        osc(800, 0.12, 0.08, 'square', 0.4, 1150)
-        osc(900, 0.28, 0.35, 'sawtooth', 0.55, 1400)
-        break
-      case 'fart':
-        osc(160, 0, 0.2, 'sawtooth', 0.55, 80)
-        osc(140, 0.24, 0.25, 'sawtooth', 0.6, 60)
-        osc(100, 0.52, 0.45, 'sawtooth', 0.7, 40)
-        noiseBurst(0.55, 0.4, 0.28, 160)
-        break
-      case 'boing':
-        osc(500, 0, 0.2, 'sine', 0.45, 140)
-        osc(700, 0.22, 0.2, 'sine', 0.5, 160)
-        osc(900, 0.44, 0.35, 'sine', 0.55, 180)
-        break
-      case 'laser':
-        osc(1400, 0, 0.12, 'square', 0.4, 300)
-        osc(1600, 0.14, 0.12, 'square', 0.4, 350)
-        osc(1900, 0.28, 0.28, 'square', 0.5, 200)
-        break
-      case 'trombone':
-        osc(392, 0, 0.22, 'sawtooth', 0.45)
-        osc(349, 0.26, 0.22, 'sawtooth', 0.45)
-        osc(294, 0.52, 0.22, 'sawtooth', 0.45)
-        osc(196, 0.78, 0.5, 'sawtooth', 0.55, 150)
-        break
-      default:
-        buzz(280, 0, 0.28, 0.75)
-        buzz(360, 0.36, 0.28, 0.8)
-        buzz(480, 0.72, 0.45, 0.9)
-        buzz(960, 0.72, 0.45, 0.35)
+    if (sound === 'complete') {
+      vibrate([80, 50, 80, 50, 140])
+      if (packId === 'gym-buzzer' || packId === 'boxing-bell') {
+        const a = await playBuffer(file, { gain: 1 })
+        const b = await playBuffer(file, { gain: 0.9, whenOffset: 0.35 })
+        return Math.max(a.durationMs, b.durationMs)
+      }
+      const a = await playBuffer(file, { gain: 1 })
+      const b = await playBuffer(file, { gain: 0.95, whenOffset: 0.28, rate: 1.08 })
+      const c = await playBuffer(file, { gain: 0.9, whenOffset: 0.56, rate: 1.15 })
+      return Math.max(a.durationMs, b.durationMs, c.durationMs)
     }
-    vibrate([80, 50, 80, 50, 140])
+
+    const handle = await playBuffer(file, { gain: 1 })
+    vibrate(sound === 'round-start' ? 100 : 60)
+    return handle.durationMs
   }
 
-  function play(sound: SoundId): void {
-    if (!settings.soundEnabled) return
-    if (!unlocked.value) return
-    const audio = ensureContext()
-    if (!audio) return
-    if (audio.state === 'suspended') void audio.resume()
-
-    if (sound === 'warning' && !settings.warningEnabled) return
-    playPackSound(sound)
+  async function play(sound: SoundId): Promise<number> {
+    if (!settings.soundEnabled) return 0
+    if (!unlocked.value) return 0
+    if (sound === 'warning' && !settings.warningEnabled) return 0
+    return playPackSound(sound)
   }
 
-  async function testSound(packId?: string): Promise<void> {
+  async function testSound(packId?: string): Promise<number> {
     const ok = await unlock()
-    if (!ok) return
-    if (!settings.soundEnabled) return
+    if (!ok) return 0
+    if (!settings.soundEnabled) return 0
 
-    if (packId) {
-      const previous = settings.soundPackId
-      settings.soundPackId = packId
-      playPackSound('round-start')
-      settings.soundPackId = previous
-      return
+    stopActiveSources()
+    if (previewTimer) {
+      clearTimeout(previewTimer)
+      previewTimer = null
     }
 
-    play('round-start')
+    isPreviewPlaying.value = true
+    const durationMs = await playPackSound('round-start', packId ?? settings.soundPackId)
+    const waitMs = Math.max(400, Math.min(durationMs + 80, 3000))
+
+    await new Promise<void>((resolve) => {
+      previewTimer = setTimeout(() => {
+        previewTimer = null
+        isPreviewPlaying.value = false
+        resolve()
+      }, waitMs)
+    })
+
+    return durationMs
   }
 
   function stopAll(): void {
+    stopActiveSources()
+    if (previewTimer) {
+      clearTimeout(previewTimer)
+      previewTimer = null
+    }
+    isPreviewPlaying.value = false
     if (ctx && ctx.state === 'running') {
       void ctx.suspend()
     }
@@ -537,11 +299,13 @@ export function useTimerAudio() {
     unlocked,
     initFailed,
     notice,
+    isPreviewPlaying,
     unlock,
     updateSettings,
     play,
     testSound,
     stopAll,
     resumeContext,
+    preloadAll,
   }
 }

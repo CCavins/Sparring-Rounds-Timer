@@ -11,7 +11,13 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/*.png', 'icons/*.svg'],
+      includeAssets: [
+        'favicon.svg',
+        'icons/*.png',
+        'icons/*.svg',
+        'sounds/LICENSE.md',
+        'sounds/v1/*.mp3',
+      ],
       manifest: {
         name: 'Spar Timer',
         short_name: 'SparTimer',
@@ -45,7 +51,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,mp3,md}'],
         navigateFallback: 'index.html',
         runtimeCaching: [
           {
@@ -55,6 +61,17 @@ export default defineConfig({
               cacheName: 'spar-timer-fonts-v1',
               expiration: {
                 maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.includes('/sounds/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'spar-timer-sounds-v1',
+              expiration: {
+                maxEntries: 40,
                 maxAgeSeconds: 60 * 60 * 24 * 365,
               },
             },

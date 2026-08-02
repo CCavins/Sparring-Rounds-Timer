@@ -18,6 +18,7 @@ const endDialogOpen = ref(false)
 const skipDialogOpen = ref(false)
 const skipArmed = ref(false)
 const showIosHint = ref(false)
+const playingPackId = ref<string | null>(null)
 
 let skipHoldTimer: ReturnType<typeof setTimeout> | null = null
 let previousPhaseForAudio: string | null = null
@@ -74,8 +75,14 @@ async function startWorkout(): Promise<void> {
 }
 
 async function previewSound(packId: string): Promise<void> {
+  if (playingPackId.value) return
+  playingPackId.value = packId
   syncAudioSettings()
-  await audio.testSound(packId)
+  try {
+    await audio.testSound(packId)
+  } finally {
+    playingPackId.value = null
+  }
 }
 
 function onTimerEvent(event: TimerEvent): void {
@@ -317,6 +324,7 @@ onUnmounted(() => {
       :config="config"
       :audio-notice="audio.notice.value"
       :show-ios-hint="showIosHint"
+      :playing-pack-id="playingPackId"
       @update:config="config = $event"
       @start="startWorkout()"
       @test-sound="audio.testSound()"

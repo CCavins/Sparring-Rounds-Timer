@@ -10,6 +10,7 @@ import {
 const props = defineProps<{
   open: boolean
   modelValue: string
+  playingPackId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -24,6 +25,10 @@ const closeBtn = ref<HTMLButtonElement | null>(null)
 
 const serious = computed(() => SOUND_PACKS.filter((p) => p.category === 'serious'))
 const fun = computed(() => SOUND_PACKS.filter((p) => p.category === 'fun'))
+
+function isPlaying(packId: string): boolean {
+  return props.playingPackId === packId
+}
 
 watch(
   () => props.open,
@@ -102,6 +107,7 @@ function categoryTitle(category: SoundPackCategory): string {
 
       <p class="sound-modal__intro">
         Pick a sound pack for round start, end, warnings, and completion. Preview before choosing.
+        Samples are free CC0 recordings from BigSoundBank.
       </p>
 
       <section class="sound-modal__group" aria-labelledby="serious-heading">
@@ -125,10 +131,12 @@ function categoryTitle(category: SoundPackCategory): string {
             <button
               type="button"
               class="sound-modal__preview"
-              :aria-label="`Preview ${pack.label}`"
+              :class="{ 'sound-modal__preview--playing': isPlaying(pack.id) }"
+              :aria-label="isPlaying(pack.id) ? `${pack.label} playing` : `Preview ${pack.label}`"
+              :disabled="!!playingPackId && !isPlaying(pack.id)"
               @click="preview(pack, $event)"
             >
-              Preview
+              {{ isPlaying(pack.id) ? 'Playing…' : 'Preview' }}
             </button>
           </div>
         </div>
@@ -155,10 +163,12 @@ function categoryTitle(category: SoundPackCategory): string {
             <button
               type="button"
               class="sound-modal__preview"
-              :aria-label="`Preview ${pack.label}`"
+              :class="{ 'sound-modal__preview--playing': isPlaying(pack.id) }"
+              :aria-label="isPlaying(pack.id) ? `${pack.label} playing` : `Preview ${pack.label}`"
+              :disabled="!!playingPackId && !isPlaying(pack.id)"
               @click="preview(pack, $event)"
             >
-              Preview
+              {{ isPlaying(pack.id) ? 'Playing…' : 'Preview' }}
             </button>
           </div>
         </div>
@@ -302,9 +312,39 @@ function categoryTitle(category: SoundPackCategory): string {
 
 .sound-modal__preview {
   min-height: 2.75rem;
+  min-width: 5.75rem;
   align-self: center;
   padding: 0 0.75rem;
   font-size: 0.9rem;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.sound-modal__preview--playing {
+  border-color: transparent;
+  background: linear-gradient(135deg, #2ec8e6, #57f0a8);
+  color: #041018;
+  box-shadow: 0 0 0 1px rgba(46, 200, 230, 0.35), 0 0 18px rgba(46, 200, 230, 0.35);
+}
+
+.sound-modal__preview:disabled:not(.sound-modal__preview--playing) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sound-modal__preview--playing {
+    animation: preview-pulse 0.9s ease-in-out infinite;
+  }
+}
+
+@keyframes preview-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
 }
 
 .sound-modal__footer {

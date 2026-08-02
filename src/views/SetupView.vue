@@ -20,6 +20,7 @@ const props = defineProps<{
   config: TimerConfiguration
   audioNotice?: string
   showIosHint?: boolean
+  playingPackId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -212,6 +213,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     <SoundPackModal
       :open="soundModalOpen"
       :model-value="config.soundPackId"
+      :playing-pack-id="playingPackId"
       @update:model-value="patch({ soundPackId: $event })"
       @close="soundModalOpen = false"
       @preview="emit('previewSound', $event)"
