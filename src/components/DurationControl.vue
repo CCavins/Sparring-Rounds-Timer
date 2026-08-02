@@ -52,7 +52,7 @@ function commit(): void {
         class="duration__btn"
         :aria-label="`Decrease ${label}`"
         :disabled="modelValue <= min"
-        @click="adjust(-(step ?? 5))"
+        @click="adjust(-(step ?? 15))"
       >
         −
       </button>
@@ -76,7 +76,7 @@ function commit(): void {
         class="duration__btn"
         :aria-label="`Increase ${label}`"
         :disabled="modelValue >= max"
-        @click="adjust(step ?? 5)"
+        @click="adjust(step ?? 15)"
       >
         +
       </button>

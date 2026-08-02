@@ -113,7 +113,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         :model-value="config.roundDurationSeconds"
         :min="LIMITS.roundDurationSeconds.min"
         :max="LIMITS.roundDurationSeconds.max"
-        :step="5"
+        :step="15"
         @update:model-value="markCustomIfNeeded('roundDurationSeconds', $event)"
       />
 
@@ -123,7 +123,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         :model-value="config.restDurationSeconds"
         :min="LIMITS.restDurationSeconds.min"
         :max="LIMITS.restDurationSeconds.max"
-        :step="5"
+        :step="15"
         @update:model-value="markCustomIfNeeded('restDurationSeconds', $event)"
       />
 
