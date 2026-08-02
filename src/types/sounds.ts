@@ -26,7 +26,7 @@ export const SOUND_PACKS: SoundPack[] = [
   {
     id: 'air-horn',
     label: 'Air Horn',
-    description: 'Stadium / DJ compressed-gas air horn.',
+    description: 'Deep stadium / DJ air-horn blast.',
     category: 'serious',
   },
   {

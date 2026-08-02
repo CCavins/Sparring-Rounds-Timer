@@ -1,7 +1,7 @@
 import type { SoundId } from '../composables/soundIds'
 
 /** Versioned sample root — bump when replacing audio assets. */
-export const SOUND_ASSET_VERSION = 'v4'
+export const SOUND_ASSET_VERSION = 'v5'
 export const SOUND_BASE_PATH = `sounds/${SOUND_ASSET_VERSION}`
 
 type CueMap = Record<SoundId, string>
