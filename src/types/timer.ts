@@ -56,6 +56,7 @@ export const PRESETS: TimerPreset[] = [
   { id: 'amateur', label: 'Amateur Boxing', roundDurationSeconds: 120, restDurationSeconds: 60 },
   { id: 'mma', label: 'MMA', roundDurationSeconds: 300, restDurationSeconds: 60 },
   { id: 'muay-thai', label: 'Muay Thai', roundDurationSeconds: 180, restDurationSeconds: 60 },
+  { id: 'bjj', label: 'BJJ', roundDurationSeconds: 300, restDurationSeconds: 60 },
   { id: 'custom', label: 'Custom', roundDurationSeconds: 180, restDurationSeconds: 60 },
 ]
 
