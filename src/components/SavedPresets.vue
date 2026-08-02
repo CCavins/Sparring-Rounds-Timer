@@ -11,9 +11,13 @@ import {
 import type { TimerConfiguration } from '../types/timer'
 import { formatSeconds } from '../utils/duration'
 
-const props = defineProps<{
-  config: TimerConfiguration
-}>()
+const props = withDefaults(
+  defineProps<{
+    config: TimerConfiguration
+    compact?: boolean
+  }>(),
+  { compact: false },
+)
 
 const emit = defineEmits<{
   load: [preset: SavedCustomPreset]
@@ -71,9 +75,12 @@ function summary(preset: SavedCustomPreset): string {
 </script>
 
 <template>
-  <section class="saved" aria-labelledby="saved-heading">
-    <h2 id="saved-heading" class="saved__heading">Saved Custom Setups</h2>
-    <p class="saved__hint">Save the current rounds, times, and prep for quick reuse on this device.</p>
+  <section class="saved" :class="{ 'saved--compact': compact }" aria-labelledby="saved-heading">
+    <h2 v-if="!compact" id="saved-heading" class="saved__heading">Saved Custom Setups</h2>
+    <h2 v-else id="saved-heading" class="sr-only">Saved Custom Setups</h2>
+    <p v-if="!compact" class="saved__hint">
+      Save the current rounds, times, and prep for quick reuse on this device.
+    </p>
 
     <div class="saved__form">
       <label class="saved__label" for="custom-preset-name">Name</label>
@@ -240,5 +247,21 @@ function summary(preset: SavedCustomPreset): string {
 
 .saved__delete {
   color: #ffb4a8;
+}
+
+.saved--compact {
+  gap: 0.55rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 </style>

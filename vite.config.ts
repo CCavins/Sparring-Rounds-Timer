@@ -26,11 +26,14 @@ export default defineConfig({
         theme_color: '#0a0a0b',
         background_color: '#0a0a0b',
         display: 'standalone',
+        display_override: ['standalone', 'fullscreen', 'minimal-ui'],
         orientation: 'any',
         start_url: '.',
         scope: '.',
         lang: 'en',
+        id: './',
         categories: ['sports', 'fitness', 'health'],
+        prefer_related_applications: false,
         icons: [
           {
             src: 'icons/icon-192.png',

@@ -2,14 +2,22 @@
 import { computed, ref, watch } from 'vue'
 import { formatSeconds, parseDurationInput } from '../utils/duration'
 
-const props = defineProps<{
-  label: string
-  modelValue: number
-  min: number
-  max: number
-  step?: number
-  id?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    label: string
+    modelValue: number
+    min: number
+    max: number
+    step?: number
+    id?: string
+    compact?: boolean
+    disabled?: boolean
+  }>(),
+  {
+    compact: false,
+    disabled: false,
+  },
+)
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
@@ -27,11 +35,16 @@ watch(
 const display = computed(() => formatSeconds(props.modelValue))
 
 function adjust(delta: number): void {
+  if (props.disabled) return
   const next = Math.min(props.max, Math.max(props.min, props.modelValue + delta))
   emit('update:modelValue', next)
 }
 
 function commit(): void {
+  if (props.disabled) {
+    draft.value = formatSeconds(props.modelValue)
+    return
+  }
   const parsed = parseDurationInput(draft.value)
   if (parsed === null) {
     draft.value = formatSeconds(props.modelValue)
@@ -44,14 +57,14 @@ function commit(): void {
 </script>
 
 <template>
-  <div class="duration">
+  <div class="duration" :class="{ 'duration--compact': compact, 'duration--disabled': disabled }">
     <label :for="id" class="duration__label">{{ label }}</label>
     <div class="duration__controls">
       <button
         type="button"
         class="duration__btn"
         :aria-label="`Decrease ${label}`"
-        :disabled="modelValue <= min"
+        :disabled="disabled || modelValue <= min"
         @click="adjust(-(step ?? 15))"
       >
         −
@@ -63,19 +76,20 @@ function commit(): void {
           type="text"
           inputmode="numeric"
           :value="draft"
+          :disabled="disabled"
           :aria-label="`${label}, currently ${display}`"
           @focus="($event.target as HTMLInputElement).select()"
           @input="draft = ($event.target as HTMLInputElement).value"
           @change="commit"
           @keydown.enter.prevent="commit"
         />
-        <span class="duration__hint" aria-hidden="true">MM:SS</span>
+        <span v-if="!compact" class="duration__hint" aria-hidden="true">MM:SS</span>
       </div>
       <button
         type="button"
         class="duration__btn"
         :aria-label="`Increase ${label}`"
-        :disabled="modelValue >= max"
+        :disabled="disabled || modelValue >= max"
         @click="adjust(step ?? 15)"
       >
         +
@@ -88,6 +102,7 @@ function commit(): void {
 .duration {
   display: grid;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .duration__label {
@@ -134,6 +149,7 @@ function commit(): void {
 .duration__field {
   position: relative;
   display: grid;
+  min-width: 0;
 }
 
 .duration__input {
@@ -158,5 +174,35 @@ function commit(): void {
   letter-spacing: 0.08em;
   color: var(--text-dim);
   pointer-events: none;
+}
+
+.duration--compact {
+  gap: 0.3rem;
+}
+
+.duration--compact .duration__label {
+  font-size: 0.72rem;
+}
+
+.duration--compact .duration__controls {
+  grid-template-columns: 2.35rem 1fr 2.35rem;
+  gap: 0.3rem;
+}
+
+.duration--compact .duration__btn {
+  min-width: 2.35rem;
+  min-height: 2.55rem;
+  font-size: 1.25rem;
+  border-radius: 0.6rem;
+}
+
+.duration--compact .duration__input {
+  min-height: 2.55rem;
+  font-size: clamp(1.05rem, 3.2vw, 1.35rem);
+  border-radius: 0.6rem;
+}
+
+.duration--disabled {
+  opacity: 0.45;
 }
 </style>

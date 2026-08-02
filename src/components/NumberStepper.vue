@@ -1,12 +1,16 @@
 <script setup lang="ts">
-defineProps<{
-  label: string
-  modelValue: number
-  min: number
-  max: number
-  step?: number
-  id?: string
-}>()
+withDefaults(
+  defineProps<{
+    label: string
+    modelValue: number
+    min: number
+    max: number
+    step?: number
+    id?: string
+    compact?: boolean
+  }>(),
+  { compact: false },
+)
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
@@ -25,7 +29,7 @@ function onInput(event: Event, min: number, max: number): void {
 </script>
 
 <template>
-  <div class="stepper">
+  <div class="stepper" :class="{ 'stepper--compact': compact }">
     <label :for="id" class="stepper__label">{{ label }}</label>
     <div class="stepper__controls">
       <button
@@ -65,6 +69,7 @@ function onInput(event: Event, min: number, max: number): void {
 .stepper {
   display: grid;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .stepper__label {
@@ -128,5 +133,31 @@ function onInput(event: Event, min: number, max: number): void {
 .stepper__input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+.stepper--compact {
+  gap: 0.3rem;
+}
+
+.stepper--compact .stepper__label {
+  font-size: 0.72rem;
+}
+
+.stepper--compact .stepper__controls {
+  grid-template-columns: 2.35rem 1fr 2.35rem;
+  gap: 0.3rem;
+}
+
+.stepper--compact .stepper__btn {
+  min-width: 2.35rem;
+  min-height: 2.55rem;
+  font-size: 1.25rem;
+  border-radius: 0.6rem;
+}
+
+.stepper--compact .stepper__input {
+  min-height: 2.55rem;
+  font-size: clamp(1.05rem, 3.2vw, 1.35rem);
+  border-radius: 0.6rem;
 }
 </style>

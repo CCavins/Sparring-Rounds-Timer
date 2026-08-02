@@ -19,8 +19,10 @@ const skipDialogOpen = ref(false)
 const skipArmed = ref(false)
 const showIosHint = ref(false)
 const playingPackId = ref<string | null>(null)
+const isStandalone = ref(false)
 
 let skipHoldTimer: ReturnType<typeof setTimeout> | null = null
+let skipHoldCompleted = false
 let previousPhaseForAudio: string | null = null
 let wakeDesired = false
 
@@ -31,13 +33,20 @@ const wakeLock = useWakeLock()
 
 const isPaused = computed(() => timer.phase.value === 'paused')
 
-function detectIosHint(): void {
+function detectDisplayMode(): void {
   const ua = navigator.userAgent
-  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-  const isStandalone =
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  const standalone =
     window.matchMedia('(display-mode: standalone)').matches ||
-    ('standalone' in navigator && (navigator as Navigator & { standalone?: boolean }).standalone === true)
-  showIosHint.value = isIOS && !isStandalone
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    ('standalone' in navigator &&
+      (navigator as Navigator & { standalone?: boolean }).standalone === true)
+  isStandalone.value = standalone
+  showIosHint.value = isIOS && !standalone
+  document.documentElement.classList.toggle('standalone-app', standalone)
+  document.body.classList.toggle('standalone-app', standalone)
 }
 
 function announce(message: string): void {
@@ -168,8 +177,13 @@ function resume(): void {
 }
 
 function requestSkip(): void {
+  // Press-and-hold skip fires click afterward; ignore that synthetic click.
+  if (skipHoldCompleted) {
+    skipHoldCompleted = false
+    return
+  }
+
   if (timer.phase.value === 'paused') {
-    // skip paused underlying phase
     const before = timer.phaseBeforePause.value
     if (before === 'active') {
       skipDialogOpen.value = true
@@ -194,11 +208,16 @@ function confirmSkip(): void {
 }
 
 function onSkipHoldStart(): void {
-  if (timer.phase.value !== 'active' && !(timer.phase.value === 'paused' && timer.phaseBeforePause.value === 'active')) {
+  if (
+    timer.phase.value !== 'active' &&
+    !(timer.phase.value === 'paused' && timer.phaseBeforePause.value === 'active')
+  ) {
     return
   }
+  skipHoldCompleted = false
   skipHoldTimer = setTimeout(() => {
     skipArmed.value = true
+    skipHoldCompleted = true
     confirmSkip()
   }, 650)
 }
@@ -209,6 +228,12 @@ function onSkipHoldEnd(): void {
     skipHoldTimer = null
   }
   skipArmed.value = false
+  // Hold-skip also synthesizes a click; keep the guard until that click arrives.
+  if (skipHoldCompleted) {
+    window.setTimeout(() => {
+      skipHoldCompleted = false
+    }, 400)
+  }
 }
 
 function requestEnd(): void {
@@ -301,7 +326,7 @@ watch(
 )
 
 onMounted(() => {
-  detectIosHint()
+  detectDisplayMode()
   syncAudioSettings()
   window.addEventListener('keydown', onKeydown)
   document.addEventListener('visibilitychange', onVisibility)
@@ -318,7 +343,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="app">
+  <div class="app" :class="{ 'app--standalone': isStandalone }">
     <SetupView
       v-if="screen === 'setup'"
       :config="config"
@@ -385,5 +410,10 @@ onUnmounted(() => {
 <style scoped>
 .app {
   min-height: 100dvh;
+  min-height: 100svh;
+}
+
+.app--standalone {
+  overscroll-behavior: none;
 }
 </style>

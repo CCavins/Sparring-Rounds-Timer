@@ -2,9 +2,13 @@
 import { PRESETS } from '../types/timer'
 import { formatSeconds } from '../utils/duration'
 
-defineProps<{
-  modelValue: string | null
-}>()
+withDefaults(
+  defineProps<{
+    modelValue: string | null
+    compact?: boolean
+  }>(),
+  { compact: false },
+)
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -17,15 +21,17 @@ function onSelect(id: string): void {
 }
 
 function timingLabel(preset: (typeof PRESETS)[number]): string {
-  if (preset.id === 'custom') return 'Your times'
-  return `${formatSeconds(preset.roundDurationSeconds)} / ${formatSeconds(preset.restDurationSeconds)}`
+  if (preset.id === 'custom') return 'Custom'
+  return `${formatSeconds(preset.roundDurationSeconds)}/${formatSeconds(preset.restDurationSeconds)}`
 }
 </script>
 
 <template>
-  <fieldset class="presets">
-    <legend class="presets__legend">Presets</legend>
-    <p class="presets__hint">Sets round and rest length only — the timer works the same for every sport.</p>
+  <fieldset class="presets" :class="{ 'presets--compact': compact }">
+    <legend v-if="!compact" class="presets__legend">Presets</legend>
+    <p v-if="!compact" class="presets__hint">
+      Sets round and rest length only — the timer works the same for every sport.
+    </p>
     <div class="presets__grid" role="group" aria-label="Training presets">
       <button
         v-for="preset in PRESETS"
@@ -56,6 +62,7 @@ function timingLabel(preset: (typeof PRESETS)[number]): string {
   padding: 0;
   display: grid;
   gap: 0.65rem;
+  min-width: 0;
 }
 
 .presets__legend {
@@ -97,6 +104,7 @@ function timingLabel(preset: (typeof PRESETS)[number]): string {
   letter-spacing: 0.02em;
   cursor: pointer;
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  touch-action: manipulation;
 }
 
 .presets__name {
@@ -120,5 +128,39 @@ function timingLabel(preset: (typeof PRESETS)[number]): string {
   background: linear-gradient(135deg, rgba(255, 92, 45, 0.22), rgba(255, 140, 40, 0.08));
   color: #fff4ec;
   box-shadow: 0 0 0 1px rgba(255, 92, 45, 0.25);
+}
+
+.presets--compact {
+  gap: 0.35rem;
+}
+
+.presets--compact .presets__grid {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 0.35rem;
+  padding-bottom: 0.1rem;
+}
+
+.presets--compact .presets__grid::-webkit-scrollbar {
+  display: none;
+}
+
+.presets--compact .presets__item {
+  flex: 0 0 auto;
+  min-height: 2.55rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 0.7rem;
+}
+
+.presets--compact .presets__name {
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.presets--compact .presets__timing {
+  font-size: 0.68rem;
 }
 </style>
