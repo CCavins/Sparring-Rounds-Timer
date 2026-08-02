@@ -30,6 +30,7 @@ watch(
   (value) => {
     draft.value = formatSeconds(value)
   },
+  { flush: 'sync' },
 )
 
 const display = computed(() => formatSeconds(props.modelValue))

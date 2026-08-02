@@ -71,6 +71,12 @@ function syncAudioSettings(): void {
   })
 }
 
+function updateConfig(next: TimerConfiguration): void {
+  config.value = { ...next }
+  saveConfiguration(config.value)
+  syncAudioSettings()
+}
+
 async function startWorkout(): Promise<void> {
   saveConfiguration(config.value)
   syncAudioSettings()
@@ -357,7 +363,7 @@ onUnmounted(() => {
       :audio-notice="audio.notice.value"
       :show-ios-hint="showIosHint"
       :playing-pack-id="playingPackId"
-      @update:config="config = $event"
+      @update:config="updateConfig"
       @start="startWorkout()"
       @test-sound="audio.testSound()"
       @preview-sound="previewSound"

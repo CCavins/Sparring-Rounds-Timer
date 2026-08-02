@@ -37,6 +37,45 @@ test.describe('Spar Timer', () => {
     await expect(page.getByTestId('countdown')).toBeVisible()
   })
 
+  test('preset changes update round and rest times', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('.presets__item', { hasText: 'BJJ' }).click()
+    await expect(page.locator('#round-duration')).toHaveValue('06:00')
+    await expect(page.locator('#rest-duration')).toHaveValue('01:30')
+
+    await page.locator('.presets__item', { hasText: 'MMA' }).click()
+    await expect(page.locator('#round-duration')).toHaveValue('05:00')
+    await expect(page.locator('#rest-duration')).toHaveValue('01:00')
+
+    await page
+      .locator('.presets__item', { hasText: 'Boxing' })
+      .filter({ hasNotText: 'Amateur' })
+      .click()
+    await expect(page.locator('#round-duration')).toHaveValue('03:00')
+    await expect(page.locator('#rest-duration')).toHaveValue('01:00')
+  })
+
+  test('stacks round controls on iPhone width', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+    await expect(page.getByTestId('setup-view')).toBeVisible()
+    const layout = await page.evaluate(() => {
+      const round = document.querySelector('#round-duration')?.closest('.duration')
+      const rest = document.querySelector('#rest-duration')?.closest('.duration')
+      if (!round || !rest) return null
+      const roundBox = round.getBoundingClientRect()
+      const restBox = rest.getBoundingClientRect()
+      return {
+        roundTop: roundBox.top,
+        restTop: restBox.top,
+        roundWidth: roundBox.width,
+      }
+    })
+    expect(layout).toBeTruthy()
+    expect(layout!.restTop).toBeGreaterThan(layout!.roundTop + 20)
+    expect(layout!.roundWidth).toBeGreaterThan(280)
+  })
+
   test('pauses and resumes', async ({ page }) => {
     await startShortWorkout(page)
     await expect(phaseLabel(page, 'SPARRING')).toBeVisible()

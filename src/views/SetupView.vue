@@ -51,10 +51,11 @@ function onPreset(id: string): void {
     patch({ presetId: 'custom' })
     return
   }
+  // Always write fresh round/rest values so duration inputs re-sync on iOS.
   patch({
     presetId: id,
-    roundDurationSeconds: preset.roundDurationSeconds,
-    restDurationSeconds: preset.restDurationSeconds,
+    roundDurationSeconds: Number(preset.roundDurationSeconds),
+    restDurationSeconds: Number(preset.restDurationSeconds),
   })
 }
 
@@ -188,6 +189,7 @@ onUnmounted(() => {
           @update:model-value="patch({ rounds: $event })"
         />
         <DurationControl
+          :key="`round-${config.presetId}-${config.roundDurationSeconds}`"
           id="round-duration"
           label="Round"
           compact
@@ -198,6 +200,7 @@ onUnmounted(() => {
           @update:model-value="markCustomIfNeeded('roundDurationSeconds', $event)"
         />
         <DurationControl
+          :key="`rest-${config.presetId}-${config.restDurationSeconds}`"
           id="rest-duration"
           label="Rest"
           compact
@@ -383,8 +386,9 @@ onUnmounted(() => {
 
 .setup__controls {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.65rem;
+  /* iPhone / narrow phones: stack rounds + times for full-width readability */
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
 }
 
 .setup__prep {
@@ -478,13 +482,10 @@ onUnmounted(() => {
   transform: scale(0.985);
 }
 
-@media (max-width: 420px) {
+@media (min-width: 700px) {
   .setup__controls {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .setup__controls > :first-child {
-    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
   }
 }
 
@@ -504,7 +505,7 @@ onUnmounted(() => {
 
   .setup__body {
     align-content: start;
-    gap: 0.5rem;
+    gap: 0.45rem;
   }
 
   .setup__controls {
@@ -549,10 +550,6 @@ onUnmounted(() => {
 
   .setup__controls {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .setup__controls > :first-child {
-    grid-column: auto;
   }
 
   .setup__tagline {
