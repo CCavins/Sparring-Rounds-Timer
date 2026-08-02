@@ -26,13 +26,13 @@ export const SOUND_PACKS: SoundPack[] = [
   {
     id: 'air-horn',
     label: 'Air Horn',
-    description: 'Siren blast for round changes.',
+    description: 'Pneumatic air-horn blast.',
     category: 'serious',
   },
   {
     id: 'whistle',
-    label: 'Referee Whistle',
-    description: 'Whistle cue samples.',
+    label: 'Train Horn',
+    description: 'Big locomotive horn cues.',
     category: 'serious',
   },
   {
