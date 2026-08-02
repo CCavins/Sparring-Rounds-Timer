@@ -53,6 +53,15 @@ button,
 input,
 select {
   font: inherit;
+  /* Prevent iOS double-tap zoom when rapidly tapping +/- controls */
+  touch-action: manipulation;
+}
+
+input[type='number'],
+input[type='text'],
+input[type='range'] {
+  /* iOS zooms focused fields under 16px */
+  font-size: max(1em, 16px);
 }
 
 button:focus-visible,
