@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import AudioSettings from '../components/AudioSettings.vue'
 import DurationControl from '../components/DurationControl.vue'
 import NumberStepper from '../components/NumberStepper.vue'
 import PresetSelector from '../components/PresetSelector.vue'
+import SavedPresets from '../components/SavedPresets.vue'
+import SoundPackModal from '../components/SoundPackModal.vue'
+import type { SavedCustomPreset } from '../types/presets'
+import { DEFAULT_SOUND_PACK_ID } from '../types/sounds'
 import {
   LIMITS,
   PREPARATION_OPTIONS,
@@ -22,7 +26,10 @@ const emit = defineEmits<{
   'update:config': [value: TimerConfiguration]
   start: []
   testSound: []
+  previewSound: [packId: string]
 }>()
+
+const soundModalOpen = ref(false)
 
 const vibrationSupported = computed(
   () => typeof navigator !== 'undefined' && 'vibrate' in navigator,
@@ -49,8 +56,13 @@ function onPreset(id: string): void {
 }
 
 function markCustomIfNeeded(key: 'roundDurationSeconds' | 'restDurationSeconds', value: number): void {
-  const preset = PRESETS.find((item) => item.id === props.config.presetId)
-  if (!preset || props.config.presetId === 'custom') {
+  const presetId = props.config.presetId
+  if (!presetId || presetId === 'custom' || presetId.startsWith('saved:')) {
+    patch({ [key]: value, presetId: 'custom' })
+    return
+  }
+  const preset = PRESETS.find((item) => item.id === presetId)
+  if (!preset) {
     patch({ [key]: value, presetId: 'custom' })
     return
   }
@@ -64,6 +76,21 @@ function markCustomIfNeeded(key: 'roundDurationSeconds' | 'restDurationSeconds',
   })
 }
 
+function loadSavedPreset(preset: SavedCustomPreset): void {
+  patch({
+    presetId: `saved:${preset.id}`,
+    rounds: preset.rounds,
+    roundDurationSeconds: preset.roundDurationSeconds,
+    restDurationSeconds: preset.restDurationSeconds,
+    preparationDurationSeconds: preset.preparationDurationSeconds,
+  })
+}
+
+function resetSoundPack(): void {
+  patch({ soundPackId: DEFAULT_SOUND_PACK_ID })
+  emit('previewSound', DEFAULT_SOUND_PACK_ID)
+}
+
 watch(
   () => props.config,
   (value) => saveConfiguration(value),
@@ -71,6 +98,7 @@ watch(
 )
 
 function onKeydown(event: KeyboardEvent): void {
+  if (soundModalOpen.value) return
   const target = event.target as HTMLElement | null
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
     return
@@ -148,11 +176,14 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         </div>
       </fieldset>
 
+      <SavedPresets :config="config" @load="loadSavedPreset" />
+
       <AudioSettings
         :sound-enabled="config.soundEnabled"
         :warning-enabled="config.warningEnabled"
         :vibration-enabled="config.vibrationEnabled"
         :volume="config.volume"
+        :sound-pack-id="config.soundPackId"
         :notice="audioNotice"
         :vibration-supported="vibrationSupported"
         @update:sound-enabled="patch({ soundEnabled: $event })"
@@ -160,6 +191,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         @update:vibration-enabled="patch({ vibrationEnabled: $event })"
         @update:volume="patch({ volume: $event })"
         @test="emit('testSound')"
+        @open-sound-packs="soundModalOpen = true"
+        @reset-sound-pack="resetSoundPack"
       />
 
       <button
@@ -175,6 +208,15 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         Tip: Add Spar Timer to your Home Screen for a more app-like fullscreen experience on iOS.
       </p>
     </div>
+
+    <SoundPackModal
+      :open="soundModalOpen"
+      :model-value="config.soundPackId"
+      @update:model-value="patch({ soundPackId: $event })"
+      @close="soundModalOpen = false"
+      @preview="emit('previewSound', $event)"
+      @reset="patch({ soundPackId: DEFAULT_SOUND_PACK_ID })"
+    />
   </section>
 </template>
 
@@ -298,6 +340,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   cursor: pointer;
   box-shadow: 0 10px 36px rgba(255, 92, 45, 0.28);
   transition: transform 0.12s ease, filter 0.12s ease;
+  touch-action: manipulation;
 }
 
 .setup__start:hover {

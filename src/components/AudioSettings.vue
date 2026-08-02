@@ -1,9 +1,13 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+import { getSoundPack } from '../types/sounds'
+
+const props = defineProps<{
   soundEnabled: boolean
   warningEnabled: boolean
   vibrationEnabled: boolean
   volume: number
+  soundPackId: string
   notice?: string
   vibrationSupported?: boolean
 }>()
@@ -14,7 +18,11 @@ const emit = defineEmits<{
   'update:vibrationEnabled': [value: boolean]
   'update:volume': [value: number]
   test: []
+  openSoundPacks: []
+  resetSoundPack: []
 }>()
+
+const packLabel = computed(() => getSoundPack(props.soundPackId).label)
 </script>
 
 <template>
@@ -66,6 +74,21 @@ const emit = defineEmits<{
       />
       <span class="audio__volume-value" aria-hidden="true">{{ Math.round(volume * 100) }}%</span>
     </label>
+
+    <div class="audio__pack">
+      <div class="audio__pack-info">
+        <span class="audio__pack-label">Sound pack</span>
+        <span class="audio__pack-name" data-testid="sound-pack-name">{{ packLabel }}</span>
+      </div>
+      <div class="audio__pack-actions">
+        <button type="button" class="audio__test" data-testid="choose-sounds" @click="emit('openSoundPacks')">
+          Choose Sounds
+        </button>
+        <button type="button" class="audio__test" @click="emit('resetSoundPack')">
+          Reset Sounds
+        </button>
+      </div>
+    </div>
 
     <button type="button" class="audio__test" @click="emit('test')">
       Test Sound
@@ -131,6 +154,38 @@ const emit = defineEmits<{
   accent-color: var(--accent-warm);
 }
 
+.audio__pack {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.audio__pack-info {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.audio__pack-label {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.audio__pack-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.audio__pack-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
 .audio__test {
   min-height: 3rem;
   border: 1px solid var(--border-strong);
@@ -140,6 +195,7 @@ const emit = defineEmits<{
   font-family: var(--font-ui);
   font-weight: 650;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .audio__test:hover {

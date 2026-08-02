@@ -32,8 +32,14 @@ function timingLabel(preset: (typeof PRESETS)[number]): string {
         :key="preset.id"
         type="button"
         class="presets__item"
-        :class="{ 'presets__item--active': modelValue === preset.id }"
-        :aria-pressed="modelValue === preset.id"
+        :class="{
+          'presets__item--active':
+            modelValue === preset.id ||
+            (preset.id === 'custom' && !!modelValue?.startsWith('saved:')),
+        }"
+        :aria-pressed="
+          modelValue === preset.id || (preset.id === 'custom' && !!modelValue?.startsWith('saved:'))
+        "
         @click="onSelect(preset.id)"
       >
         <span class="presets__name">{{ preset.label }}</span>

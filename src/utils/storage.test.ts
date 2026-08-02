@@ -52,4 +52,20 @@ describe('storage', () => {
     localStorage.setItem(STORAGE_KEY, '{not-json')
     expect(loadConfiguration()).toEqual(DEFAULT_CONFIGURATION)
   })
+
+  it('defaults unknown sound packs to gym-buzzer', () => {
+    const result = validateConfiguration({
+      ...DEFAULT_CONFIGURATION,
+      soundPackId: 'not-a-real-pack',
+    })
+    expect(result?.soundPackId).toBe('gym-buzzer')
+  })
+
+  it('keeps saved custom preset ids', () => {
+    const result = validateConfiguration({
+      ...DEFAULT_CONFIGURATION,
+      presetId: 'saved:abc-123',
+    })
+    expect(result?.presetId).toBe('saved:abc-123')
+  })
 })

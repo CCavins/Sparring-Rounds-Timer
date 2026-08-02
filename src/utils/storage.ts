@@ -1,3 +1,4 @@
+import { DEFAULT_SOUND_PACK_ID, isSoundPackId } from '../types/sounds'
 import {
   DEFAULT_CONFIGURATION,
   LIMITS,
@@ -37,9 +38,14 @@ export function validateConfiguration(raw: unknown): TimerConfiguration | null {
   const presetId =
     data.presetId === null
       ? null
-      : typeof data.presetId === 'string' && PRESETS.some((p) => p.id === data.presetId)
+      : typeof data.presetId === 'string' &&
+          (PRESETS.some((p) => p.id === data.presetId) || data.presetId.startsWith('saved:'))
         ? data.presetId
         : 'custom'
+
+  const soundPackId = isSoundPackId(data.soundPackId)
+    ? data.soundPackId
+    : DEFAULT_SOUND_PACK_ID
 
   return {
     rounds: Math.round(clamp(data.rounds, LIMITS.rounds.min, LIMITS.rounds.max)),
@@ -69,6 +75,7 @@ export function validateConfiguration(raw: unknown): TimerConfiguration | null {
     vibrationEnabled: data.vibrationEnabled,
     volume: clamp(data.volume, LIMITS.volume.min, LIMITS.volume.max),
     presetId,
+    soundPackId,
   }
 }
 

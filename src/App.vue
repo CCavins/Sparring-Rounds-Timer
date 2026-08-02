@@ -51,14 +51,19 @@ async function ensureWakeLock(): Promise<void> {
   await wakeLock.request()
 }
 
-async function startWorkout(): Promise<void> {
-  saveConfiguration(config.value)
+function syncAudioSettings(): void {
   audio.updateSettings({
     soundEnabled: config.value.soundEnabled,
     warningEnabled: config.value.warningEnabled,
     vibrationEnabled: config.value.vibrationEnabled,
     volume: config.value.volume,
+    soundPackId: config.value.soundPackId,
   })
+}
+
+async function startWorkout(): Promise<void> {
+  saveConfiguration(config.value)
+  syncAudioSettings()
   await audio.unlock()
   await audio.resumeContext()
   previousPhaseForAudio = null
@@ -66,6 +71,11 @@ async function startWorkout(): Promise<void> {
   screen.value = 'timer'
   wakeDesired = true
   await ensureWakeLock()
+}
+
+async function previewSound(packId: string): Promise<void> {
+  syncAudioSettings()
+  await audio.testSound(packId)
 }
 
 function onTimerEvent(event: TimerEvent): void {
@@ -277,12 +287,7 @@ function onVisibility(): void {
 watch(
   config,
   (value) => {
-    audio.updateSettings({
-      soundEnabled: value.soundEnabled,
-      warningEnabled: value.warningEnabled,
-      vibrationEnabled: value.vibrationEnabled,
-      volume: value.volume,
-    })
+    syncAudioSettings()
     saveConfiguration(value)
   },
   { deep: true },
@@ -290,6 +295,7 @@ watch(
 
 onMounted(() => {
   detectIosHint()
+  syncAudioSettings()
   window.addEventListener('keydown', onKeydown)
   document.addEventListener('visibilitychange', onVisibility)
 })
@@ -314,6 +320,7 @@ onUnmounted(() => {
       @update:config="config = $event"
       @start="startWorkout()"
       @test-sound="audio.testSound()"
+      @preview-sound="previewSound"
     />
 
     <TimerView

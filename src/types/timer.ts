@@ -1,3 +1,5 @@
+import { DEFAULT_SOUND_PACK_ID } from './sounds'
+
 export type TimerPhase =
   | 'idle'
   | 'preparing'
@@ -5,6 +7,8 @@ export type TimerPhase =
   | 'resting'
   | 'paused'
   | 'completed'
+
+export { DEFAULT_SOUND_PACK_ID } from './sounds'
 
 export type ActivePhase = Exclude<TimerPhase, 'paused' | 'idle' | 'completed'>
 
@@ -18,6 +22,7 @@ export interface TimerConfiguration {
   vibrationEnabled: boolean
   volume: number
   presetId: string | null
+  soundPackId: string
 }
 
 export interface TimerSessionState {
@@ -78,6 +83,7 @@ export const DEFAULT_CONFIGURATION: TimerConfiguration = {
   vibrationEnabled: false,
   volume: 0.85,
   presetId: 'boxing',
+  soundPackId: DEFAULT_SOUND_PACK_ID,
 }
 
 export const LIMITS = {
