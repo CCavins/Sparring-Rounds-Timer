@@ -11,18 +11,23 @@ const props = defineProps<{
   paused?: boolean
 }>()
 
+const DOT_LIMIT = 12
+
 const ratio = computed(() =>
   progressRatio(props.remainingMilliseconds, props.phaseDurationMilliseconds),
 )
 
-const markers = computed(() =>
-  Array.from({ length: props.totalRounds }, (_, index) => {
+const showDots = computed(() => props.totalRounds > 0 && props.totalRounds <= DOT_LIMIT)
+
+const markers = computed(() => {
+  if (!showDots.value) return []
+  return Array.from({ length: props.totalRounds }, (_, index) => {
     const round = index + 1
     if (round < props.currentRound) return 'done'
     if (round === props.currentRound && props.phase !== 'preparing') return 'current'
     return 'upcoming'
-  }),
-)
+  })
+})
 </script>
 
 <template>
@@ -34,7 +39,7 @@ const markers = computed(() =>
         :style="{ transform: `scaleX(${ratio})` }"
       />
     </div>
-    <ol class="progress__rounds">
+    <ol v-if="showDots" class="progress__rounds">
       <li
         v-for="(status, index) in markers"
         :key="index"

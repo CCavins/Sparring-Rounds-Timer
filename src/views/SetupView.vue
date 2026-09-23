@@ -314,11 +314,15 @@ onUnmounted(() => {
 
 .setup__brand {
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
   font-family: var(--font-display);
-  font-size: clamp(1.85rem, 6.5vw, 2.55rem);
+  font-size: clamp(1.35rem, 7.2vw, 2.55rem);
   line-height: 1;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .setup__tagline {
@@ -376,7 +380,8 @@ onUnmounted(() => {
 
 .setup__body {
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: grid;
   align-content: space-evenly;
   gap: clamp(0.65rem, 2.4vh, 1.35rem);
@@ -480,6 +485,24 @@ onUnmounted(() => {
 
 .setup__start:active {
   transform: scale(0.985);
+}
+
+@media (max-width: 520px) {
+  .setup__settings-copy {
+    display: none;
+  }
+
+  .setup__settings {
+    width: 3rem;
+    max-width: none;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .setup__settings svg {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
 }
 
 @media (min-width: 700px) {

@@ -43,16 +43,20 @@ const emit = defineEmits<{
   position: relative;
   min-height: 100dvh;
   display: grid;
-  place-content: center;
   justify-items: center;
   gap: 1rem;
-  padding: max(1.5rem, env(safe-area-inset-top)) 1.5rem max(1.5rem, env(safe-area-inset-bottom));
+  padding:
+    max(1.5rem, env(safe-area-inset-top))
+    max(1.5rem, env(safe-area-inset-right))
+    max(1.5rem, env(safe-area-inset-bottom))
+    max(1.5rem, env(safe-area-inset-left));
   text-align: center;
   background:
     radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255, 200, 70, 0.18), transparent 60%),
     radial-gradient(ellipse 50% 40% at 50% 80%, rgba(60, 200, 120, 0.1), transparent 55%),
     #080a08;
-  overflow: hidden;
+  overflow: auto;
+  place-content: safe center;
 }
 
 .complete__glow {
@@ -112,5 +116,36 @@ const emit = defineEmits<{
   border: 0;
   background: linear-gradient(135deg, #f0c14b, #7dcc6a);
   color: #141008;
+}
+
+@media (max-height: 500px) {
+  .complete {
+    gap: 0.4rem;
+    padding:
+      max(0.6rem, env(safe-area-inset-top))
+      max(0.85rem, env(safe-area-inset-right))
+      max(0.6rem, env(safe-area-inset-bottom))
+      max(0.85rem, env(safe-area-inset-left));
+  }
+
+  .complete__symbol {
+    font-size: 1.6rem;
+  }
+
+  .complete__title {
+    font-size: clamp(1.6rem, 5vw, 1.8rem);
+  }
+
+  .complete__summary {
+    margin-bottom: 0.25rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-height: 500px) and (min-width: 560px) {
+  .complete__actions {
+    grid-template-columns: 1fr 1fr;
+    width: min(100%, 36rem);
+  }
 }
 </style>

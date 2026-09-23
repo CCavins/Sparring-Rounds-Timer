@@ -164,6 +164,13 @@ function timingLabel(preset: (typeof PRESETS)[number]): string {
   font-size: 0.76rem;
 }
 
+@media (min-width: 700px) {
+  .presets--compact .presets__grid {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
+
 @media (max-height: 700px) {
   .presets--compact .presets__item {
     min-height: 2.65rem;

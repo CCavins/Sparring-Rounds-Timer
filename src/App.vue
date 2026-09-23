@@ -145,6 +145,11 @@ function handlePhaseAudio(event: TimerEvent): void {
 
   void audio.resumeContext()
 
+  if (prev === 'paused') {
+    previousPhaseForAudio = phase
+    return
+  }
+
   if (phase === 'preparing') {
     announce(`Get ready. Round 1 of ${event.totalRounds}.`)
   } else if (phase === 'active') {

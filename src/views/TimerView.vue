@@ -169,7 +169,9 @@ const roundHighlight = computed(() => {
   z-index: 1;
   display: grid;
   justify-items: center;
+  justify-self: center;
   gap: 0.35rem;
+  width: min(100%, 42rem);
 }
 
 .timer-view__round-num {
@@ -207,35 +209,66 @@ const roundHighlight = computed(() => {
   border: 0;
 }
 
-@media (orientation: landscape) {
+@media (orientation: landscape) and (max-height: 520px) {
   .timer-view {
-    grid-template-columns: minmax(8rem, 18vw) 1fr minmax(10rem, 22vw);
-    grid-template-rows: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     align-items: center;
+    column-gap: 0.75rem;
   }
 
   .timer-view__top {
     grid-column: 1;
     grid-row: 1;
-    justify-items: start;
-    align-content: center;
-    padding-left: 0.25rem;
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    justify-content: flex-start;
+    justify-self: stretch;
+    width: 100%;
+    gap: 0.4rem 0.75rem;
+  }
+
+  .timer-view__round-num {
+    font-size: 1.35rem;
+  }
+
+  .timer-view__round-label {
+    font-size: 0.95rem;
+  }
+
+  .timer-view__top :deep(.badge) {
+    min-height: 2.2rem;
+    padding: 0.2rem 0.7rem;
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
   }
 
   .timer-view :deep(.timer) {
-    grid-column: 2;
-    grid-row: 1;
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
   }
 
   .timer-view__bottom {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    display: contents;
   }
-}
 
-@media (orientation: landscape) and (max-height: 480px) {
-  .timer-view__round-num {
-    font-size: clamp(1.5rem, 6vh, 2.25rem);
+  .timer-view__bottom :deep(.progress) {
+    grid-column: 1;
+    grid-row: 3;
+    width: 100%;
+  }
+
+  .timer-view__bottom :deep(.controls),
+  .timer-view__bottom :deep(.controls.controls--quad) {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    align-self: center;
+    justify-self: end;
+    width: 7.5rem;
+    grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 0;
   }
 }
 
