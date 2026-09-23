@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import {
   DEFAULT_SOUND_PACK_ID,
   SOUND_PACKS,
@@ -67,17 +67,6 @@ function resetDefault(): void {
 function onCancel(): void {
   emit('close')
 }
-
-function onKeydown(event: KeyboardEvent): void {
-  if (!props.open) return
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    emit('close')
-  }
-}
-
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 function categoryTitle(category: SoundPackCategory): string {
   return category === 'serious' ? 'Serious' : 'Fun / Funny'
@@ -189,10 +178,18 @@ function categoryTitle(category: SoundPackCategory): string {
   border: 1px solid var(--border-strong);
   border-radius: 1rem;
   padding: 0;
+  margin: auto;
   background: #121214;
   color: var(--text);
-  width: min(34rem, calc(100vw - 1.5rem));
-  max-height: min(85dvh, 40rem);
+  width: min(
+    34rem,
+    calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1.5rem)
+  );
+  max-height: min(
+    85dvh,
+    40rem,
+    calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1rem)
+  );
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
 }
 
@@ -203,8 +200,16 @@ function categoryTitle(category: SoundPackCategory): string {
 .sound-modal__panel {
   display: grid;
   gap: 1rem;
-  padding: 1.15rem 1.15rem 1.25rem;
-  max-height: min(85dvh, 40rem);
+  padding:
+    max(1.15rem, env(safe-area-inset-top))
+    max(1.15rem, env(safe-area-inset-right))
+    max(1.25rem, env(safe-area-inset-bottom))
+    max(1.15rem, env(safe-area-inset-left));
+  max-height: min(
+    85dvh,
+    40rem,
+    calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1rem)
+  );
   overflow: auto;
 }
 
@@ -361,5 +366,28 @@ function categoryTitle(category: SoundPackCategory): string {
   background: linear-gradient(135deg, #ff5c2d, #ff8c28);
   border: 0;
   color: #1a0800;
+}
+
+@media (max-width: 520px) {
+  .sound-modal__item {
+    grid-template-columns: 1fr;
+  }
+
+  .sound-modal__preview {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 520px), (max-height: 520px) {
+  .sound-modal {
+    width: calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 0.75rem);
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 0.75rem);
+    border-radius: 0.85rem;
+  }
+
+  .sound-modal__panel {
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 0.75rem);
+  }
 }
 </style>

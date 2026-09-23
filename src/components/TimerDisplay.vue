@@ -40,7 +40,7 @@ const time = computed(() => formatDuration(props.remainingMilliseconds))
   line-height: 0.92;
   color: var(--text);
   text-shadow: 0 0 40px color-mix(in srgb, currentColor 22%, transparent);
-  font-size: clamp(4.5rem, 28vmin, 18rem);
+  font-size: clamp(4.5rem, min(28vmin, 32vh), 16rem);
   user-select: none;
 }
 
@@ -59,12 +59,6 @@ const time = computed(() => formatDuration(props.remainingMilliseconds))
 .timer--paused .timer__value {
   color: var(--phase-paused);
   opacity: 0.85;
-}
-
-@media (orientation: landscape) {
-  .timer__value {
-    font-size: clamp(5rem, 32vmin, 20rem);
-  }
 }
 
 @media (prefers-reduced-motion: no-preference) {

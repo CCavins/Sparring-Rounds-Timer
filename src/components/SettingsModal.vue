@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import type { SavedCustomPreset } from '../types/presets'
 import type { TimerConfiguration } from '../types/timer'
 import AudioSettings from './AudioSettings.vue'
@@ -60,17 +60,6 @@ function onLoadSaved(preset: SavedCustomPreset): void {
   emit('loadSaved', preset)
   emit('close')
 }
-
-function onKeydown(event: KeyboardEvent): void {
-  if (!props.open) return
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    emit('close')
-  }
-}
-
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
@@ -130,10 +119,18 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   border: 1px solid var(--border-strong);
   border-radius: 1rem;
   padding: 0;
+  margin: auto;
   background: #121214;
   color: var(--text);
-  width: min(34rem, calc(100vw - 1.25rem));
-  max-height: min(85dvh, 40rem);
+  width: min(
+    34rem,
+    calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1.25rem)
+  );
+  max-height: min(
+    85dvh,
+    40rem,
+    calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1rem)
+  );
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
 }
 
@@ -144,8 +141,16 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 .settings-modal__panel {
   display: grid;
   gap: 1rem;
-  padding: 1rem 1rem 1.15rem;
-  max-height: min(85dvh, 40rem);
+  padding:
+    max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1.15rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+  max-height: min(
+    85dvh,
+    40rem,
+    calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1rem)
+  );
   overflow: auto;
 }
 
@@ -198,5 +203,17 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   font-size: 0.88rem;
   color: var(--text-dim);
   line-height: 1.35;
+}
+
+@media (max-width: 520px), (max-height: 520px) {
+  .settings-modal {
+    width: calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 0.75rem);
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 0.75rem);
+    border-radius: 0.85rem;
+  }
+
+  .settings-modal__panel {
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 0.75rem);
+  }
 }
 </style>

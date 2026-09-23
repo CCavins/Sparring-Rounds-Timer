@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   open: boolean
@@ -44,17 +44,6 @@ function onCancel(): void {
 function onConfirm(): void {
   emit('confirm')
 }
-
-function onKeydown(event: KeyboardEvent): void {
-  if (!props.open) return
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    emit('cancel')
-  }
-}
-
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
@@ -94,9 +83,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   border: 1px solid var(--border-strong);
   border-radius: 1rem;
   padding: 0;
+  margin: auto;
   background: #141417;
   color: var(--text);
-  max-width: min(26rem, calc(100vw - 2rem));
+  max-width: min(
+    26rem,
+    calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1.5rem)
+  );
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
 }
 
@@ -107,7 +100,11 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 .dialog__panel {
   display: grid;
   gap: 1rem;
-  padding: 1.5rem;
+  padding:
+    max(1.25rem, env(safe-area-inset-top))
+    max(1.25rem, env(safe-area-inset-right))
+    max(1.25rem, env(safe-area-inset-bottom))
+    max(1.25rem, env(safe-area-inset-left));
 }
 
 .dialog__title {
@@ -132,11 +129,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 .dialog__btn {
   min-height: 3rem;
+  padding: 0.45rem 0.7rem;
   border-radius: 0.75rem;
   border: 1px solid transparent;
   font-family: var(--font-ui);
   font-weight: 700;
   cursor: pointer;
+  white-space: normal;
 }
 
 .dialog__btn--secondary {
@@ -153,5 +152,11 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 .dialog__btn--danger {
   background: linear-gradient(135deg, #ff3b3b, #c91818);
   color: #fff;
+}
+
+@media (max-width: 420px) {
+  .dialog__actions {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
